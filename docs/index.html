@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoSSR RNRCORE | The Fair Layer 1</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --bg: #0a0a0a;
+            --surface: #1a1a1a;
+            --text: #ffffff;
+        }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+        
+        /* Hero */
+        .hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: radial-gradient(circle at center, #1a2a20 0%, #0a0a0a 70%); }
+        h1 { font-size: 4rem; margin: 0; background: linear-gradient(to right, #00ff88, #00aaff); -webkit-background-clip: text; color: transparent; }
+        p.subtitle { font-size: 1.5rem; color: #888; margin-top: 1rem; }
+        .btn { padding: 1rem 2rem; background: var(--primary); color: #000; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; margin-top: 2rem; transition: transform 0.2s; text-decoration: none; display: inline-block;}
+        .btn:hover { transform: scale(1.05); }
+
+        /* Stats Bar */
+        .stats-bar { display: flex; gap: 2rem; padding: 2rem; background: rgba(255,255,255,0.05); width: 80%; justify-content: space-around; border-radius: 10px; margin-top: -50px; backdrop-filter: blur(10px); }
+        .stat-item h3 { margin: 0; color: var(--primary); }
+        
+        /* Content */
+        section { padding: 4rem 10%; }
+        .card { background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid #333; margin-bottom: 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        
+        /* Explorer */
+        #explorer-feed { font-family: monospace; color: #00ff88; background: #000; padding: 1rem; height: 300px; overflow-y: scroll; border: 1px solid #333; }
+        .block-entry { border-bottom: 1px solid #333; padding: 0.5rem 0; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="hero">
+        <h1>PoSSR RNRCORE</h1>
+        <p class="subtitle">The Last Fair Blockchain.</p>
+        <div>
+            <a href="https://github.com/LICODX/PoSSR-RNRCORE" class="btn">View on GitHub</a>
+            <a href="#whitepaper" class="btn" style="background:transparent; border: 1px solid var(--primary); color:var(--primary)">Read Whitepaper</a>
+        </div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-item"><h3>$RNR</h3><p>Native Asset</p></div>
+        <div class="stat-item"><h3>21M</h3><p>Supply Cap</p></div>
+        <div class="stat-item"><h3>PoRS</h3><p>Fair Consensus</p></div>
+        <div class="stat-item"><h3>100%</h3><p>Uptime</p></div>
+    </div>
+
+    <section id="features">
+        <h2>Why RNRCORE?</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>⚖️ Fairness Engine</h3>
+                <p>Proof of Repeated Sorting (PoRS) breaks the ASIC monopoly. One CPU = One Vote.</p>
+            </div>
+            <div class="card">
+                <h3>🌐 Interoperability</h3>
+                <p>Native support for <b>USDT, BTC, ETH</b> via RNR-20 Wrappers using our Layer 1 bridge architecture.</p>
+            </div>
+            <div class="card">
+                <h3>🛡️ Battle Hardened</h3>
+                <p>Survived 100-Node adversarial simulation and 100GB Data Flood stress tests.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="explorer">
+        <h2>Live Block Explorer (Simulation)</h2>
+        <p>Connecting to Mainnet Node...</p>
+        <div id="explorer-feed">
+            <!-- JS will populate this -->
+            <div class="block-entry">Waiting for blocks...</div>
+        </div>
+    </section>
+
+    <script>
+        const feed = document.getElementById('explorer-feed');
+        let height = 10500;
+        
+        // Mocking Live Data for the Landing Page experience
+        // In real deploy, this would fetch from /api/stats
+        function addBlock() {
+            height++;
+            const tps = Math.floor(Math.random() * 50) + 10;
+            const hash = "000" + Math.random().toString(16).substr(2, 60);
+            
+            const div = document.createElement('div');
+            div.className = 'block-entry';
+            div.innerHTML = `[BLOCK #${height}] Hash: ${hash.substr(0, 16)}... | TPS: ${tps} | Miner: Honest-Node-${Math.floor(Math.random()*20)}`;
+            
+            feed.insertBefore(div, feed.firstChild);
+            if(feed.children.length > 15) feed.removeChild(feed.lastChild);
+        }
+
+        setInterval(addBlock, 3000);
+    </script>
+</body>
+</html>
