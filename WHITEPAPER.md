@@ -12,8 +12,8 @@ The blockchain space faces a trilemma: Security, Scalability, and Decentralizati
 The native currency of the ecosystem is **RNR**.
 
 *   **Total Supply:** 21,000,000 RNR (Hard Cap, Deflationary).
-*   **Block Time:** ~10 Seconds.
-*   **Block Reward:** 50 RNR (Halves every 210,000 blocks - approx 4 years).
+*   **Block Time:** ~10 Seconds (Target).
+*   **Block Reward:** 50 RNR (Protocol Rule: Halves every 210,000 blocks).
 *   **Allocation:**
     *   **Mining Rewards (80%):** Distributed to miners securing the network.
     *   **Ecosystem Fund (10%):** For grants, bridges (BTC/ETH), and developer tools.
@@ -44,7 +44,7 @@ This allows external assets to be "Wrapped" and traded on our high-speed chain.
 (See Technical Addendum)
 PoRS uses `QuickSort`, `MergeSort`, and `HeapSort` variants selected by a VRF Seed.
 *   **Seed:** Block Hash `N-1`.
-*   **Task:** Sort 1GB Array.
+*   **Task:** Sort Transaction Pool (V1) -> Sort Large Data Blob (Roadmap V2).
 *   **Proof:** Merkle Root of Sorted Array.
 
 ## 6. Roadmap
@@ -54,4 +54,4 @@ PoRS uses `QuickSort`, `MergeSort`, and `HeapSort` variants selected by a VRF Se
 *   **Phase 4:** Global Governance DAO.
 
 ---
-*"Code is Law, but Fairness is Justice."*
+*"Code is Law, but Fairness is Justice."
