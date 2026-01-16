@@ -1,0 +1,60 @@
+# Binaries / Executables
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+
+# Build artifacts
+/build/
+/dist/
+
+# Data directories (blockchain data)
+/data/
+/mainnet-data/
+/testnet-data/
+*.db
+*.leveldb
+
+# Logs
+*.log
+/logs/
+build_log.txt
+
+# Wallet files (SENSITIVE - contains private keys/mnemonics)
+genesis_wallet.json
+imported_wallet.json
+wallet.json
+*.wallet
+keystore/
+
+# TLS Certificates (regenerate for each environment)
+/certs/
+*.crt
+*.key
+*.pem
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Go specific
+vendor/
+*.cover
+*.out
+
+# OS generated
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Node modules (if any frontend exists)
+node_modules/

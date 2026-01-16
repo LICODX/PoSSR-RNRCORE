@@ -1,0 +1,31 @@
+=============== Jan 15, 2026 (PST) ===============
+00:48:04.260553 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+00:48:04.303904 db@open opening
+00:48:04.316728 version@stat F·[] S·0B[] Sc·[]
+00:48:04.319579 db@janitor F·2 G·0
+00:48:04.319579 db@open done T·15.6741ms
+00:48:04.320616 db@close closing
+00:48:04.320616 db@close done T·0s
+=============== Jan 16, 2026 (PST) ===============
+06:24:47.384786 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+06:24:47.391996 version@stat F·[] S·0B[] Sc·[]
+06:24:47.392537 db@open opening
+06:24:47.392537 journal@recovery F·1
+06:24:47.393534 journal@recovery recovering @1
+06:24:47.405330 memdb@flush created L0@2 N·2 S·460B "blo..y-0,v1":"blo..r-0,v2"
+06:24:47.406475 version@stat F·[1] S·460B[460B] Sc·[0.25]
+06:24:47.425472 db@janitor F·3 G·0
+06:24:47.425472 db@open done T·32.9336ms
+06:24:47.431031 db@close closing
+06:24:47.432462 db@close done T·1.4315ms
+=============== Jan 16, 2026 (PST) ===============
+06:35:30.217795 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+06:35:30.234103 version@stat F·[1] S·460B[460B] Sc·[0.25]
+06:35:30.234103 db@open opening
+06:35:30.234637 journal@recovery F·1
+06:35:30.235798 journal@recovery recovering @3
+06:35:30.262870 version@stat F·[1] S·460B[460B] Sc·[0.25]
+06:35:30.304666 db@janitor F·3 G·0
+06:35:30.305667 db@open done T·71.562ms
+06:35:30.306666 db@close closing
+06:35:30.306666 db@close done T·0s

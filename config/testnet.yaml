@@ -1,0 +1,44 @@
+# Testnet Configuration
+testnet: true
+chain_id: 1337  # Testnet chain ID
+
+# Network
+network:
+  listen_port: 3000
+  seed_nodes:
+    - "localhost:3001"
+    - "localhost:3002"
+  
+# Storage
+storage:
+  data_dir: "./testnet-data"
+  pruning_enabled: true
+  pruning_window: 100  # Keep more blocks for testnet
+
+# Genesis
+genesis:
+  timestamp: 0  # Will use current time
+  initial_supply: 5000000000  # 5 Billion RNR
+  allocation:
+    genesis_wallet: "PASTE_TESTNET_GENESIS_ADDRESS_HERE"
+
+# Mining
+mining:
+  enabled: true
+  algorithm_rotation: true
+
+# RPC
+rpc:
+  enabled: true
+  port: 9545
+  allowed_origins: ["*"]
+
+# Dashboard
+dashboard:
+  enabled: true
+  port: 8080
+
+# Logging
+logging:
+  level: "debug"
+  file: "./logs/testnet.log"

@@ -1,0 +1,61 @@
+# Mainnet Configuration
+testnet: false
+chain_id: 1  # Mainnet chain ID
+
+# Network
+network:
+  listen_port: 3000
+  seed_nodes:
+    - "seed1.rnr.network:3000"
+    - "seed2.rnr.network:3000"
+    - "seed3.rnr.network:3000"
+  max_peers: 50
+  
+# Storage
+storage:
+  data_dir: "./mainnet-data"
+  pruning_enabled: true
+  pruning_window: 2880  # 48 hours (conservative)
+
+# Genesis - FIXED for mainnet (DO NOT CHANGE)
+genesis:
+  timestamp: 1704067200  # 2024-01-01 00:00:00 UTC (FIXED)
+  initial_supply: 5000000000  # 5 Billion RNR
+  allocation:
+    genesis_wallet: "PASTE_MAINNET_GENESIS_ADDRESS_HERE"  # MUST BE SET BEFORE LAUNCH
+  block_hash: "0x0000000000000000000000000000000000000000000000000000000000000000"  # Deterministic
+
+# Mining
+mining:
+  enabled: true
+  algorithm_rotation: true
+
+# Security
+security:
+  tls_enabled: true  # MANDATORY for mainnet
+  cert_file: "./certs/node.crt"
+  key_file: "./certs/node.key"
+
+# RPC
+rpc:
+  enabled: true
+  port: 9545
+  allowed_origins: ["https://rnr.network"]  # Restrict for security
+  rate_limit: 100  # requests per second
+
+# Dashboard
+dashboard:
+  enabled: true
+  port: 8080
+
+# Monitoring
+monitoring:
+  prometheus_enabled: true
+  prometheus_port: 9090
+
+# Logging
+logging:
+  level: "info"  # Less verbose for mainnet
+  file: "./logs/mainnet.log"
+  max_size: "100MB"
+  max_backups: 10

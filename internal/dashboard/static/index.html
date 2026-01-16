@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rnr-core Mainnet Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">rnr-core <span class="badge">MAINNET</span></div>
+            <div class="status-dot online"></div>
+        </header>
+
+        <div class="grid">
+            <div class="card glass">
+                <h3>Block Height</h3>
+                <h1 id="height">0</h1>
+                <div class="chart-line"></div>
+            </div>
+            
+            <div class="card glass">
+                <h3>TPS (Real-time)</h3>
+                <h1 id="tps" class="neon-text">0</h1>
+                <div class="chart-line red"></div>
+            </div>
+
+            <div class="card glass">
+                <h3>Mempool Size</h3>
+                <h1 id="mempool">0</h1>
+                <p class="subtext">Pending Tx</p>
+            </div>
+        </div>
+
+        <div class="console glass">
+            <h3>Latest Hash</h3>
+            <code id="lastHash">Waiting for blocks...</code>
+        </div>
+    </div>
+
+    <script>
+        async function updateStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                
+                document.getElementById('height').innerText = data.height;
+                document.getElementById('mempool').innerText = data.mempoolSize;
+                document.getElementById('tps').innerText = data.tps;
+                document.getElementById('lastHash').innerText = data.lastHash;
+            } catch (e) {
+                console.error("Failed to fetch stats");
+            }
+        }
+        
+        setInterval(updateStats, 1000);
+        updateStats();
+    </script>
+</body>
+</html>
