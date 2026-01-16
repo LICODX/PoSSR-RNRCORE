@@ -2,7 +2,7 @@ package params
 
 const (
 	// Dimensi Blok & Shard
-	BlockTime    = 60                // 1 Menit (detik)
+	BlockTime    = 6                 // 6 Detik (10 Blocks/min)
 	MaxBlockSize = 100 * 1024 * 1024 // 100 MB per Block
 	ShardSize    = 100 * 1024 * 1024 // 100 MB per Node
 	NumShards    = 10                // 10 Pemenang per Blok
