@@ -12,8 +12,9 @@ The blockchain space faces a trilemma: Security, Scalability, and Decentralizati
 The native currency of the ecosystem is **RNR**.
 
 *   **Total Supply:** 21,000,000 RNR (Hard Cap, Deflationary).
-*   **Block Time:** ~10 Seconds (Target).
-*   **Block Reward:** 50 RNR (Protocol Rule: Halves every 210,000 blocks).
+*   **Block Time:** ~6 Seconds (High Throughput).
+*   **Block Size:** 100 MB (Target: 1GB/min throughput).
+*   **Block Reward:** 50 RNR (Protocol Rule: Halves every 2,100,000 blocks).
 *   **Allocation:**
     *   **Mining Rewards (80%):** Distributed to miners securing the network.
     *   **Ecosystem Fund (10%):** For grants, bridges (BTC/ETH), and developer tools.
