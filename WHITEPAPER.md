@@ -43,10 +43,11 @@ This allows external assets to be "Wrapped" and traded on our high-speed chain.
 
 ## 5. Consensus Mechanism: PoRS
 (See Technical Addendum)
-PoRS uses `QuickSort`, `MergeSort`, and `HeapSort` variants selected by a VRF Seed.
-*   **Seed:** Block Hash `N-1`.
-*   **Task:** Sort Transaction Pool (V1) -> Sort Large Data Blob (Roadmap V2).
-*   **Proof:** Merkle Root of Sorted Array.
+PoRS uses a **Parallel Sharding** architecture:
+*   **Block Structure:** 1 GB Total Size.
+*   **Sharding:** Split into **10 Shards** of **100 MB** each.
+*   **The Race:** 10 Committees race simultaneously to sort their respective 100MB shard.
+*   **Speed:** Parallel execution allows validating 1GB of data in seconds.
 
 ## 6. Roadmap
 *   **Phase 1 (Current):** Mainnet Launch, PoRS Consensus, Basic Wallet.
