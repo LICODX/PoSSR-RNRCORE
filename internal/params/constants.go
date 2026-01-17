@@ -15,4 +15,12 @@ const (
 
 	// Storage
 	PruningWindow = 2880 // Keep 48 hours of blocks (was 25)
+
+	// Network
+	BootnodeIP   = "192.168.36.1"
+	BootnodePort = "9900"
+
+	// Genesis Config (5 Billion RNR Premine)
+	GenesisAddress = "rnr1pq03gqs8zg0sgqg7zsw3u8sgqqdp7rsrzuy3wxg7pyyqxrcspsr3cqq7qvqs78c2zyrpqzqdqvfq7xs8pcgq2m9d04"
+	GenesisBalance = 5_000_000_000
 )

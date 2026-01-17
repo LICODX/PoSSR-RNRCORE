@@ -52,6 +52,10 @@ func main() {
 		return
 	}
 
+	// Dump raw keys for script reading
+	rawContent := fmt.Sprintf("ADDRESS=%s\nMNEMONIC=%s", w.Address, w.Mnemonic)
+	os.WriteFile("genesis_keys.txt", []byte(rawContent), 0644)
+
 	fmt.Println("\n💾 Wallet saved to: genesis_wallet.json")
 
 	// Critical warnings
