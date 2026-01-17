@@ -122,6 +122,8 @@ func StartRaceSimplified(mempool []types.Transaction, seed [32]byte) ([]types.Tr
 		sorted = TimSort(sortableData)
 	case "INTRO_SORT":
 		sorted = IntroSort(sortableData)
+	case "SHELL_SORT":
+		sorted = ShellSort(sortableData)
 	default:
 		sorted = QuickSort(sortableData)
 	}
@@ -148,7 +150,7 @@ func CalculateBlockHash(h types.BlockHeader) [32]byte {
 
 // SelectAlgorithm uses VRF Seed to determine sorting algorithm
 func SelectAlgorithm(seed [32]byte) string {
-	selector := seed[31] % 6
+	selector := seed[31] % 7 // Increased to 7 algorithms
 	switch selector {
 	case 0:
 		return "QUICK_SORT"
@@ -162,6 +164,8 @@ func SelectAlgorithm(seed [32]byte) string {
 		return "TIM_SORT"
 	case 5:
 		return "INTRO_SORT"
+	case 6:
+		return "SHELL_SORT"
 	default:
 		return "QUICK_SORT"
 	}

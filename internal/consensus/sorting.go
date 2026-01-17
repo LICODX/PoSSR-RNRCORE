@@ -391,3 +391,30 @@ func logBase2(n int) int {
 	}
 	return log
 }
+
+// =============================================================================
+// 7. SHELL SORT - Optimization for 2026 Hardware
+// =============================================================================
+
+// ShellSort implements the shell sort algorithm
+// Complexity: Depends on gap sequence, typically O(n^1.5) or O(n log^2 n)
+// Good for medium sized arrays, low memory overhead
+func ShellSort(arr []SortableTransaction) []SortableTransaction {
+	// Clone array to avoid mutation
+	sorted := make([]SortableTransaction, len(arr))
+	copy(sorted, arr)
+	n := len(sorted)
+
+	// Start with a large gap, then reduce the gap
+	for gap := n / 2; gap > 0; gap /= 2 {
+		for i := gap; i < n; i++ {
+			temp := sorted[i]
+			j := i
+			for ; j >= gap && sorted[j-gap].Key > temp.Key; j -= gap {
+				sorted[j] = sorted[j-gap]
+			}
+			sorted[j] = temp
+		}
+	}
+	return sorted
+}

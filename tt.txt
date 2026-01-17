@@ -1,0 +1,11 @@
+Setelah saya teliti, ada metode shorting algorithm yang paling optimal saat ini, yaitu;
+- Shell short,
+-  Merge Sort, 
+-  Quick Sort, 
+-  Heap Sort, 
+-  Timsort, 
+-  Radix Sort
+-  Introsort
+Dengan shorting algorithm data 100 mb kurang dari 1 detik hingga 35 detik kebawah dengan hardware dari tahun 2020 dan bisa lebih cepat lagi dengan hardware terbaru 2026. Gunakan metode shorting algorithm di list tersebut sebagai main race shorting algorithm pada blockchain ini. 
+Apakah kau yakin blockchain ini tidak ada bug atau ketidak sesuaian antara dokumentasi, whitepaper dan kode yang telah ditulis? Apakah algoritma rnr-20 untuk smartcontract tidak ada bug? 
+Lakukan mainnet test 1 node Genesis, 30 node jujur 45 node hijacker dengan jumlah data 1 TB yang di proses setiap blok bersamaan dengan pembuatan token dan smartcontract

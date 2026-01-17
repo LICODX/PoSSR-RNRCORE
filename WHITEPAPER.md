@@ -44,6 +44,7 @@ This allows external assets to be "Wrapped" and traded on our high-speed chain.
 ## 5. Consensus Mechanism: PoRS
 (See Technical Addendum)
 PoRS uses a **Parallel Sharding** architecture:
+*   **Algorithms:** QuickSort, MergeSort, HeapSort, RadixSort, TimSort, IntroSort, **ShellSort** (New).
 *   **Block Structure:** 1 GB Total Size.
 *   **Sharding:** Split into **10 Shards** of **100 MB** each.
 *   **The Race:** 10 Committees race simultaneously to sort their respective 100MB shard.
