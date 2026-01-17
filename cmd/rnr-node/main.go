@@ -10,6 +10,7 @@ import (
 	"github.com/LICODX/PoSSR-RNRCORE/internal/blockchain"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/consensus"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/dashboard"
+	"github.com/LICODX/PoSSR-RNRCORE/internal/params"
 
 	// "github.com/LICODX/PoSSR-RNRCORE/internal/dashboard"
 
@@ -158,6 +159,12 @@ func main() {
 			fmt.Printf("Failed to add block: %v\n", err)
 			continue
 		}
+
+		fmt.Printf("✅ Block Accepted! Height: %d\n", newBlock.Header.Height)
+
+		// THROTTLE: Wait for BlockTime (6s) to ensure consistent heartbeat
+		fmt.Printf("⏳ Waiting %d seconds for next round...\n", params.BlockTime)
+		time.Sleep(time.Duration(params.BlockTime) * time.Second)
 
 		// Broadcast Block
 		if blockBytes, err := json.Marshal(*newBlock); err == nil {
