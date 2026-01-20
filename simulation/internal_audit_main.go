@@ -13,10 +13,10 @@ import (
 )
 
 func main() {
-	fmt.Println("🛑 RED TEAM SECURITY AUDIT STARTED 🛑")
+	fmt.Println("🔍 INTERNAL SECURITY AUDIT STARTED 🔍")
 
 	// Setup Environment
-	dbPath := "./data/red-team-test"
+	dbPath := "./data/internal-audit-test"
 	os.RemoveAll(dbPath) // Clean start
 	db, err := storage.NewLevelDB(dbPath)
 	if err != nil {
@@ -93,12 +93,12 @@ func TestReplayAttack(stateMgr *state.Manager) {
 		fmt.Println("   Reason: ValidateTransaction() checks signatures but does not check Account Nonce against State.")
 		fmt.Println("   Impact: Attacker can flood Mempool with 1,000,000 copies of old mined txs.")
 	} else {
-		fmt.Println("🛡️ SECURE: Replay transaction rejected.")
+		fmt.Println("🛡️ SECURE: Replay transaction rejected efficiently.")
 	}
 }
 
 func TestFuzzing() {
-	fmt.Println("\n[TEST 2] Packet Fuzzing (DoS)")
+	fmt.Println("\n[TEST 2] Packet Fuzzing (DoS Protection)")
 
 	// Simulate garbage data sent to JSON unmarshal
 	garbage := []byte(`{ "sender": "GARBAGE", "amount": "NAN" }`)
