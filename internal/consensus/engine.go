@@ -73,7 +73,7 @@ func MineBlock(txs []types.Transaction, prevBlock types.BlockHeader, difficulty 
 			copy(seed[:], vrfSeed)
 
 			// 6. NOW select algorithm (post-mining, unpredictable)
-			algo := SelectAlgorithm(seed)
+			algo := utils.SelectAlgorithm(seed)
 			fmt.Printf("  [VRF] Post-Mining Algorithm: %s (Seed: %x...)\n", algo, seed[:4])
 
 			// 7. Shard the mempool
@@ -144,7 +144,7 @@ func StartRaceSimplified(mempool []types.Transaction, seed [32]byte, algo string
 	for i, tx := range mempool {
 		sortableData[i] = SortableTransaction{
 			Tx:  tx,
-			Key: MixHash(tx.ID, seed),
+			Key: utils.MixHash(tx.ID, seed),
 		}
 	}
 
@@ -187,33 +187,6 @@ func CalculateBlockHash(h types.BlockHeader) [32]byte {
 	return types.HashBlockHeader(h)
 }
 
-// SelectAlgorithm uses VRF Seed to determine sorting algorithm
-func SelectAlgorithm(seed [32]byte) string {
-	selector := seed[31] % 7 // Increased to 7 algorithms
-	switch selector {
-	case 0:
-		return "QUICK_SORT"
-	case 1:
-		return "MERGE_SORT"
-	case 2:
-		return "HEAP_SORT"
-	case 3:
-		return "RADIX_SORT"
-	case 4:
-		return "TIM_SORT"
-	case 5:
-		return "INTRO_SORT"
-	case 6:
-		return "SHELL_SORT"
-	default:
-		return "QUICK_SORT"
-	}
-}
-
-// MixHash combines ID and seed to create a sorting key
-func MixHash(id [32]byte, seed [32]byte) string {
-	h := sha256.New()
-	h.Write(id[:])
-	h.Write(seed[:])
-	return string(h.Sum(nil))
-}
+// Functions moved to pkg/utils/consensus_utils.go to avoid import cycle
+// - SelectAlgorithm
+// - MixHash

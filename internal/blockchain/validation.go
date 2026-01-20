@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"time"
 
@@ -125,11 +126,38 @@ func ValidateBlock(block types.Block, prevHeader types.BlockHeader) error {
 			calculatedRoot, block.Header.MerkleRoot)
 	}
 
-	// 5. Validate all transactions
-	for _, shard := range block.Shards {
+	// 5. Validate all transactions AND Sorting Order
+	for shardID, shard := range block.Shards {
+		// A. Validate Transactions
 		for _, tx := range shard.TxData {
 			if err := ValidateTransaction(tx); err != nil {
 				return fmt.Errorf("invalid transaction in block: %v", err)
+			}
+		}
+
+		// B. VERIFY SORTING ORDER (O(N) - Linear Scan)
+		// We do NOT re-sort. We just check if Tx[i] <= Tx[i+1]
+
+		// 1. Determine Algorithm & Seeds
+		// VRF Seed was used to select Algo (already in Header)
+		// We need to reconstruct the "Sorting Key" for each tx.
+		// Note: We need access to consensus package for SelectAlgorithm/MixHash
+		// For now, we assume implicit knowledge or move helper functions to shared package.
+		// To avoid cycle, we perform a loose check or duplicate MixHash logic here.
+
+		// Re-deriving shard seed:
+		// shardSeed := sha256.Sum256(append(block.Header.VRFSeed[:], byte(shardID)))
+
+		// Optimization: Check order linearly
+		if len(shard.TxData) > 1 {
+			shardSeed := sha256.Sum256(append(block.Header.VRFSeed[:], byte(shardID)))
+			prevKey := utils.MixHash(shard.TxData[0].ID, shardSeed)
+			for i := 1; i < len(shard.TxData); i++ {
+				currKey := utils.MixHash(shard.TxData[i].ID, shardSeed)
+				if currKey < prevKey {
+					return fmt.Errorf("shard %d is NOT sorted! Cheating detected at index %d", shardID, i)
+				}
+				prevKey = currKey
 			}
 		}
 	}

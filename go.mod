@@ -13,6 +13,7 @@ require (
 	github.com/tyler-smith/go-bip32 v1.0.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.47.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -111,7 +112,6 @@ require (
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c // indirect
 	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
-	github.com/wasmerio/wasmer-go v1.0.4 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	github.com/yuin/goldmark v1.7.8 // indirect
 	go.uber.org/dig v1.19.0 // indirect
@@ -131,6 +131,5 @@ require (
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.40.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.4.1 // indirect
 )

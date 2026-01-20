@@ -1,0 +1,181 @@
+@import 'variables.css';
+
+body {
+    background-color: var(--bg-dark);
+    /* Dark Mode */
+    color: var(--text-dark-primary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.wallet-container {
+    width: 360px;
+    /* Mobile width like MetaMask popup */
+    height: 600px;
+    background: var(--card-dark);
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--border-dark);
+}
+
+/* Header */
+.wallet-header {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+.network-select {
+    background: #000;
+    border: 1px solid var(--border-dark);
+    color: var(--text-dark-secondary);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+}
+
+/* Main Content */
+.wallet-content {
+    flex: 1;
+    padding: 24px;
+    text-align: center;
+    overflow-y: auto;
+}
+
+.account-pill {
+    background: rgba(255, 255, 255, 0.1);
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+    cursor: pointer;
+}
+
+.balance-box {
+    margin-bottom: 32px;
+}
+
+.logo-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    /* Placeholder for RNR logo */
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #000;
+    font-size: 1.5rem;
+}
+
+.balance-rnr {
+    font-size: 2.5rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.balance-usd {
+    color: var(--text-dark-secondary);
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
+/* Actions Grid */
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    color: var(--primary-hover);
+}
+
+.circle-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.action-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-dark-primary);
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-dark);
+}
+
+.tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    color: var(--text-dark-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.tab-content {
+    text-align: left;
+    padding-top: 16px;
+}
+
+.asset-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-dark);
+}

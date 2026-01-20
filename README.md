@@ -29,43 +29,41 @@
 Detailed documentation has been consolidated into the [`docs/`](./docs/) directory.
 
 ### 🌟 Start Here
-- **[PROJECT PRESENTATION](./PROJECT_PRESENTATION.md)**: Executive summary, architecture, and high-level overview.
-- **[Public Testnet Manual](./docs/PUBLIC_TESTNET.md)**: 🌍 **Start Here for the 25-Node Simulation!**
-- **[Real Network Setup](./docs/REAL_NETWORK_SETUP.md)**: 🌐 **Connect Computers via Internet (WAN)**.
-- **[Whitepaper](./docs/whitepapers/PoSSR_Whitepaper.pdf)**: The theoretical foundation of PoSSR.
-- **[Blueprints](./docs/whitepapers/PoSSR_Blueprint.pdf)**: Technical architecture diagrams.
+- **[RNR Revolution (Whitepaper)](./docs/RNR_Revolution_Whitepaper.md)**: 📄 The complete explanation of the RNR revolution.
+- **[Real Network Setup](./docs/REAL_NETWORK_SETUP.md)**: 🌐 Connect to the Mainnet Genesis Node.
+- **[Adversarial Simulation](./simulation/adversarial_net_main.go)**: ⚔️ Code for 20-node attack simulation.
 
-### 🛠️ User Guides
-- **[Installation & Mining](./docs/MINING.md)**: How to set up a node and start mining.
-- **[Smart Contracts](./docs/SMART_CONTRACTS.md)**: Writing and deploying WASM contracts.
-- **[Security Protections](./docs/SECURITY_PROTECTIONS.md)**: Deep dive into the VM security layer.
-- **[Dashboard Manual](./docs/DASHBOARD_V2.2.md)**: Using the Material Design explorer.
-
-### 📊 Reports & Specs
-- **[Final Implementation Report](./docs/reports/FINAL_IMPLEMENTATION_REPORT.md)**: Validation of Whitepaper compliance.
-- **[Hardware Test Report](./docs/whitepapers/Hardware_Test_Report.pdf)**: Performance metrics on different hardware.
-- **[Sharding Specification](./docs/SHARDING.md)**
-- **[API Reference](./docs/API.md)**
+### 🛠️ Developer Guides
+- **[Technical Analysis](./docs/Analisis_Teknis.md)**: Deep dive into current metrics.
+- **[Installation & Mining](./docs/MINING.md)**: How to set up a node.
+- **[Smart Contracts](./docs/SMART_CONTRACTS.md)**: Writing WASM contracts.
+- **[Dashboard Manual](./docs/DASHBOARD_V2.2.md)**: Using the new Explorer & Wallet.
 
 ---
 
-## ⚡ Quick Start (Public Testnet)
+## ⚡ Quick Start: Join the Mainnet
 
-We are currently in the **Public Testnet Phase**, simulating a 25-node adversarial environment to prove BFT consensus.
-
-### 1. Prerequisites
-- **OS**: Windows (optimized for batch scripts), Linux, or macOS.
-- **Go**: Version 1.20+
-
-### 2. Run the 25-Node Test
-This script spins up 18 honest nodes and 7 malicious nodes to test network resilience.
+### 1. Connect to Genesis Node
+To join the live network and sync with the Genesis Node:
 
 ```bash
-.\RUN_25_NODES.bat
+# 1. Build the Node
+go build -o rnr-node.exe ./cmd/rnr-node
+
+# 2. Run (Auto-connects to seed nodes in config/mainnet.yaml)
+./rnr-node.exe
 ```
 
-> **Note**: This will open multiple terminal windows and a browser dashboard.
-> See [docs/PUBLIC_TESTNET.md](./docs/PUBLIC_TESTNET.md) for full details.
+### 2. Run Simulations (Standalone)
+You can run adversarial simulations without connecting to the network to verify security:
+
+```bash
+# Run 20-Node Adversarial Simulation (13 Malicious vs 7 Honest)
+go run simulation/adversarial_net_main.go
+
+# Run Internal Security Audit (Replay/DoS Tests)
+go run simulation/internal_audit_main.go
+```
 
 ### 3. Build from Source
 ```bash

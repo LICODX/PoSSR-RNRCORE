@@ -1,0 +1,37 @@
+[KOREKSI CARA KERJA PoSSR]
+
+Penjelasan Anda sudah hampir benar, namun ada langkah kunci yang hilang yaitu "Proof of Work" awal untuk menentukan algoritma. Berikut adalah alur teknis yang tepat sesuai kode (engine.go):
+
+1. **Pengumpulan Transaksi (Mempool)**
+   Node mengumpulkan transaksi dari mempool (hingga batas ukuran blok, misal 100MB - 1GB).
+
+2. **Mining Tahap 1: Pencarian Hash (PoW Kecil)**
+   Sebelum sorting, node harus melakukan hashing header blok untuk menemukan "VRF Seed".
+   - Node mencari `Nonce` agar `Hash(Header) < Target`.
+   - Hash yang ditemukan ini menjadi "Seed" acak yang tidak bisa dimanipulasi.
+
+3. **Pemilihan Algoritma (VRF)**
+   Seed dari Tahap 1 menentukan algoritma mana yang HARUS digunakan.
+   - Contoh: Jika Seed berakhiran angka 0 -> pakai QuickSort, angka 1 -> MergeSort, dst.
+   - Ini adalah "Race" nya: Anda tidak bisa mencuri start karena algoritma baru diketahui SETELAH Hash ditemukan.
+
+4. **Mining Tahap 2: Sequential Sorting Race**
+   - Transaksi dibagi menjadi **10 Shard** (Bagian).
+   - Node harus mengurutkan transaksi di setiap shard menggunakan algoritma yang terpilih tadi.
+   - Hasil urutan ini membentuk "Merkle Root" unik.
+
+5. **Finalisasi Blok**
+   - Header Blok (berisi Hash PoW & Seed) + Body Blok (10 Shard transaksi yang SUDAH terurut) disatukan.
+   - Blok disebarkan ke jaringan (P2P).
+
+6. **Verifikasi Node Lain**
+   - Node lain menerima blok.
+   - Cek 1: Apakah Hash PoW valid?
+   - Cek 2: Apakah Algoritma yang dipakai sesuai dengan Seed?
+   - Cek 3: Apakah hasil sorting transaksi BENAR-BENAR terurut? (Node lain melakukan sorting ulang/verifikasi sampel).
+
+7. **Selesai**
+   Jika semua valid, blok diterima dan ditambahkan ke blockchain.
+
+[RINGKASAN YANG DIPERBAIKI]
+"Node mengumpulkan transaksi (100MB+), melakukan mining PoW awal untuk mendapatkan Seed acak. Berdasarkan Seed, algoritma sorting ditentukan (misal: QuickSort). Node membagi data menjadi 10 Shard dan melakukan 'Sequential Sorting' secepat mungkin. Hasil sorting disusun menjadi blok final dan disebar. Node lain memverifikasi Hash, kesesuaian Algoritma, dan keterurutan data. Jika valid, blok diterima."

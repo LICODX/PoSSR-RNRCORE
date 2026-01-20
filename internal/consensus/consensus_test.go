@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/LICODX/PoSSR-RNRCORE/internal/consensus"
+	"github.com/LICODX/PoSSR-RNRCORE/pkg/utils"
 )
 
 func TestConsensusAggregator(t *testing.T) {
@@ -26,7 +27,7 @@ func TestVoting(t *testing.T) {
 
 func TestSelectAlgorithm(t *testing.T) {
 	seed := [32]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	algo := consensus.SelectAlgorithm(seed)
+	algo := utils.SelectAlgorithm(seed)
 
 	validAlgorithms := map[string]bool{
 		"QUICK_SORT": true,
