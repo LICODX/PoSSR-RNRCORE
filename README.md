@@ -30,7 +30,8 @@ Detailed documentation has been consolidated into the [`docs/`](./docs/) directo
 
 ### 🌟 Start Here
 - **[PROJECT PRESENTATION](./PROJECT_PRESENTATION.md)**: Executive summary, architecture, and high-level overview.
-- **[Public Testnet Manual](./docs/PUBLIC_TESTNET.md)**: 🌍 **Start Here for the 25-Node Testnet!**
+- **[Public Testnet Manual](./docs/PUBLIC_TESTNET.md)**: 🌍 **Start Here for the 25-Node Simulation!**
+- **[Real Network Setup](./docs/REAL_NETWORK_SETUP.md)**: 🌐 **Connect Computers via Internet (WAN)**.
 - **[Whitepaper](./docs/whitepapers/PoSSR_Whitepaper.pdf)**: The theoretical foundation of PoSSR.
 - **[Blueprints](./docs/whitepapers/PoSSR_Blueprint.pdf)**: Technical architecture diagrams.
 
