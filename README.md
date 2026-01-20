@@ -1,64 +1,93 @@
-# PoSSR RNRCORE (Layer 1 Blockchain)
+# 🌌 PoSSR: Proof of Sequential Sorting Race - RNR Core
+
+> **The First Deterministic Consensus Blockchain Based on Sorting Algorithms**
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/LICODX/PoSSR-RNRCORE)](https://goreportcard.com/report/github.com/LICODX/PoSSR-RNRCORE)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Consensus: PoRS](https://img.shields.io/badge/Consensus-PoRS-green)](WHITEPAPER.md)
-
-**PoSSR (Proof of Repeated Sorting)** is a revolutionary Layer 1 blockchain protocol designed to solve the "Winner Takes All" problem inherent in Proof of Work (PoW) and Proof of Stake (PoS). It utilizes a **Time-Memory Trade-off** algorithm where consensus is achieved through computationally intensive sorting tasks rather than random hashing, ensuring a fairer distribution of rewards.
-
-## 🚀 Key Features
-
-*   **Fair Consensus**: The PoRS algorithm prevents hardware monopoly. 10x hash power does not guarantee 10x rewards.
-*   **High Resilience**: Audited against **Replay Attacks**, **Sybil Attacks**, and **DoS/Spam** (verified with 100GB load tests).
-*   **P2P GossipSub**: Robust peer-to-peer networking layer for fast block propagation.
-*   **Built-in Wallet & Explorer**: Comes with a GUI Wallet and Local Dashboard Explorer out of the box.
-
-## 📦 Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/LICODX/PoSSR-RNRCORE.git
-cd PoSSR-RNRCORE
-
-# Build the Node
-go build -o rnr-node.exe ./cmd/rnr-node
-
-# Build the Genesis Wallet (Optional)
-go build -o genesis-wallet.exe ./cmd/genesis-wallet
-```
-
-## 🛠️ Usage
-
-### Running a Full Node
-```bash
-./rnr-node.exe
-```
-*   **P2P Port**: `9900`
-*   **Dashboard**: `http://localhost:8080` (View blocks/stats)
-
-### Running the Wallet
-The node includes a built-in GUI wallet. Launch the node, and the wallet interface will initialize (if configured) or use the CLI tools.
-
-## 🛡️ Security Audit & Stress Tests
-
-This project has undergone rigorous Red Team auditing.
-*   [Security Audit Report](docs/audit/security_audit_report.md)
-*   [Massive 100-Node Simulation](docs/audit/massive_simulation_report.md)
-*   [Extreme 100GB Stress Test](docs/audit/extreme_stress_report.md)
-
-## 📄 Documentation
-
-*   **[Whitepaper](WHITEPAPER.md)** - Technical Deep Dive into PoRS.
-*   **[Testnet Guide](TESTNET_MANUAL.md)** - How to run local simulations.
-*   **[API Reference](docs/api.md)** - JSON-RPC and P2P Specs.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read `CONTRIBUTING.md` before submitting a Pull Request.
-
-## 📜 License
-
-MIT License. See [LICENSE](LICENSE) for details.
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey)]()
 
 ---
-*Built with ❤️ by the RNRCORE Team.*
+
+## 🚀 Overview
+
+**RNR Core** is a next-generation Layer-1 blockchain implementing the novel **Proof of Sequential Sorting Race (PoSSR)** consensus. Instead of energy-wasteful hashing (PoW) or stake-centralized validation (PoS), PoSSR uses cryptographic randomness (VRF) to generate strict sorting challenges. Nodes race to sort data using optimal algorithms (QuickSort, MergeSort, RadixSort, etc.), rewarding computational efficiency and algorithmic skill.
+
+### ✨ Key Features
+
+- **Consensus**: Proof of Sequential Sorting Race (PoSSR)
+- **Engine**: 100% Go (Golang)
+- **Smart Contracts**: WASM Runtime (Rust/C++) with comprehensive security
+- **Scalability**: Parallel Sharding (256 Shards)
+- **Database**: BadgerDB (High Performance KV Store)
+- **Network**: LibP2P with GossipSub
+
+---
+
+## 📚 Documentation
+
+Detailed documentation has been consolidated into the [`docs/`](./docs/) directory.
+
+### 🌟 Start Here
+- **[PROJECT PRESENTATION](./PROJECT_PRESENTATION.md)**: Executive summary, architecture, and high-level overview.
+- **[Public Testnet Manual](./docs/PUBLIC_TESTNET.md)**: 🌍 **Start Here for the 25-Node Testnet!**
+- **[Whitepaper](./docs/whitepapers/PoSSR_Whitepaper.pdf)**: The theoretical foundation of PoSSR.
+- **[Blueprints](./docs/whitepapers/PoSSR_Blueprint.pdf)**: Technical architecture diagrams.
+
+### 🛠️ User Guides
+- **[Installation & Mining](./docs/MINING.md)**: How to set up a node and start mining.
+- **[Smart Contracts](./docs/SMART_CONTRACTS.md)**: Writing and deploying WASM contracts.
+- **[Security Protections](./docs/SECURITY_PROTECTIONS.md)**: Deep dive into the VM security layer.
+- **[Dashboard Manual](./docs/DASHBOARD_V2.2.md)**: Using the Material Design explorer.
+
+### 📊 Reports & Specs
+- **[Final Implementation Report](./docs/reports/FINAL_IMPLEMENTATION_REPORT.md)**: Validation of Whitepaper compliance.
+- **[Hardware Test Report](./docs/whitepapers/Hardware_Test_Report.pdf)**: Performance metrics on different hardware.
+- **[Sharding Specification](./docs/SHARDING.md)**
+- **[API Reference](./docs/API.md)**
+
+---
+
+## ⚡ Quick Start (Public Testnet)
+
+We are currently in the **Public Testnet Phase**, simulating a 25-node adversarial environment to prove BFT consensus.
+
+### 1. Prerequisites
+- **OS**: Windows (optimized for batch scripts), Linux, or macOS.
+- **Go**: Version 1.20+
+
+### 2. Run the 25-Node Test
+This script spins up 18 honest nodes and 7 malicious nodes to test network resilience.
+
+```bash
+.\RUN_25_NODES.bat
+```
+
+> **Note**: This will open multiple terminal windows and a browser dashboard.
+> See [docs/PUBLIC_TESTNET.md](./docs/PUBLIC_TESTNET.md) for full details.
+
+### 3. Build from Source
+```bash
+git clone https://github.com/LICODX/PoSSR-RNRCORE.git
+cd PoSSR-RNRCORE
+go build -o rnr-node.exe ./cmd/rnr-node
+```
+
+---
+
+## 🛡️ Security & Performance
+
+- **Block Time**: 60 Seconds (Mainnet)
+- **Max Block Size**: 1GB (Theoretical Cap)
+- **Protection**: Circuit Breakers, Execution Timeouts (5s), Memory Limits (64MB)
+- **Audit**: [Self-Audit Report](./docs/security_audit_report.md)
+
+---
+
+## 🤝 Contribution
+
+Contributions are welcome! Please check the `docs/` folder for architectural details before submitting PRs.
+
+---
+
+**Built with ❤️ by the LICODX Team**

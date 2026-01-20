@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Blockchain-PoSSR-6200EE?style=for-the-badge" alt="PoSSR"/>
   <img src="https://img.shields.io/badge/Language-Go-00ADD8?style=for-the-badge&logo=go" alt="Go"/>
   <img src="https://img.shields.io/badge/Smart_Contracts-WASM-654FF0?style=for-the-badge&logo=webassembly" alt="WASM"/>
-  <img src="https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge" alt="Status"/>
+  <img src="https://img.shields.io/badge/Status-Public_Testnet-success?style=for-the-badge" alt="Status"/>
 </p>
 
 ---
@@ -205,63 +205,28 @@ Real-time blockchain explorer with:
 ```bash
 - Go 1.20+
 - Git
-- Windows/Linux/macOS
+- Windows (Optimized)/Linux/macOS
 ```
 
-### Quick Start
+### Public Testnet (25 Nodes)
+
+We recommend running the **Public Testnet** scenario to see the full capabilities of PoSSR in an adversarial environment.
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/LICODX/PoSSR-RNRCORE.git
-cd PoSSR-RNRCORE
-
-# 2. Build node
-go build -o rnr-node.exe ./cmd/rnr-node
-
-# 3. Run mainnet node
-.\RUN_MAINNET.bat
-
-# 4. Access dashboard
-# Open browser: http://localhost:9101
-```
-
-### Test Networks
-
-```bash
-# Single node (development)
-.\RUN_MAINNET.bat
-
-# 3-node network (local testing)
-.\RUN_3_NODES.bat
-
-# 15-node network (stress testing)
-.\RUN_15_NODES.bat
-
-# 25-node network (adversarial testing with malicious nodes)
+# Run the 25-node simulation (18 Honest + 7 Malicious)
 .\RUN_25_NODES.bat
 ```
 
-### Configuration
+See the [Public Testnet Manual](./docs/PUBLIC_TESTNET.md) for detailed instructions.
 
-Edit `config/mainnet.yaml`:
+### Single Node (Mainnet Mode)
 
-```yaml
-network:
-  port: 8001
-  rpc_port: 9001
-  dashboard_port: 9101
+```bash
+# Run a single node
+.\RUN_MAINNET.bat
 
-mining:
-  enabled: true
-  difficulty: 1000
-
-storage:
-  path: ./data
-  cache_size: 1GB
-
-sharding:
-  num_shards: 256
-  rebalance_threshold: 0.8
+# Access dashboard
+# Open browser: http://localhost:9101
 ```
 
 ---
@@ -362,24 +327,17 @@ With **1GB mempool** processed per block:
 
 ## 📚 Documentation
 
-- **Whitepaper**: [Technical Whitepaper- Proof of Sequential Sorting Race (PoSSR).pdf](./Technical%20Whitepaper-%20Proof%20of%20Sequential%20Sorting%20Race%20(PoSSR).pdf)
+- **Testnet Manual**: [docs/PUBLIC_TESTNET.md](./docs/PUBLIC_TESTNET.md)
+- **Whitepaper**: [Technical Whitepaper](./docs/whitepapers/PoSSR_Whitepaper.pdf)
 - **API Reference**: [docs/API.md](./docs/API.md)
 - **Smart Contract Guide**: [docs/SMART_CONTRACTS.md](./docs/SMART_CONTRACTS.md)
 - **Mining Guide**: [docs/MINING.md](./docs/MINING.md)
-- **Sharding Spec**: [docs/SHARDING.md](./docs/SHARDING.md)
 
 ---
 
 ## 🤝 Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for guidelines.
-
-**Key Areas for Contribution**:
-- Sorting algorithm optimization
-- Smart contract examples
-- Dashboard UI/UX improvements
-- Documentation and tutorials
-- Security testing
 
 ---
 
@@ -395,30 +353,6 @@ MIT License - See [LICENSE](./LICENSE) file
 - **Documentation**: [docs/](./docs/)
 - **Discord**: Coming soon
 - **Twitter**: Coming soon
-
----
-
-## ❓ FAQ
-
-### Why sorting instead of hashing?
-
-**Answer**: Sorting is deterministic, verifiable, and rewards algorithmic skill rather than brute-force computational power. It incentivizes CPU optimization and compiler improvements, benefiting the broader tech ecosystem.
-
-### Can I mine on a regular laptop?
-
-**Answer**: Yes! PoSSR is designed to be hardware-agnostic. Even a modest laptop can participate, though faster CPUs with better cache optimization will have an advantage.
-
-### What makes PoSSR more secure than PoW?
-
-**Answer**: VRF ensures randomness can't be predicted or pre-computed. Attackers must maintain sustained algorithmic superiority across all 7 sorting algorithms,making 51% attacks economically infeasible.
-
-### Can I deploy Solidity contracts?
-
-**Answer**: Not directly. RNR-CORE uses WASM for smart contracts. You can write contracts in Rust (recommended), C, or C++, then compile to WASM. We're exploring Solidity-to-WASM transpilers for future compatibility.
-
-### What's the maximum TPS?
-
-**Answer**: **Single shard**: ~500 TPS. **Full network (256 shards)**: Theoretically ~128,000 TPS. Actual throughput depends on transaction types and network conditions.
 
 ---
 
