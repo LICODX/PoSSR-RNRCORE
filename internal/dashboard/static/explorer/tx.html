@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Details - RNRScan</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="explorer.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="explorer-nav">
+        <div class="nav-content">
+            <div class="logo" onclick="window.location.href='/explorer/'">🔍 RNRScan</div>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search by Block / TX Hash / Address">
+                <button onclick="performSearch()">Search</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="explorer-container">
+        <div class="page-header">
+            <h1>💸 Transaction Details</h1>
+        </div>
+
+        <div class="detail-card glass">
+            <h3>Transaction Information</h3>
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <span class="detail-label">TX Hash:</span>
+                    <span class="detail-value mono" id="hash">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value">
+                        <span class="status-badge confirmed" id="status">confirmed</span>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Block:</span>
+                    <span class="detail-value">
+                        <a href="#" id="blockLink" class="link">-</a>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Timestamp:</span>
+                    <span class="detail-value" id="timestamp">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">From:</span>
+                    <span class="detail-value">
+                        <a href="#" id="fromLink" class="link mono">-</a>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">To:</span>
+                    <span class="detail-value">
+                        <a href="#" id="toLink" class="link mono">-</a>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Amount:</span>
+                    <span class="detail-value amount" id="amount">- RNR</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Nonce:</span>
+                    <span class="detail-value" id="nonce">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const txHash = urlParams.get('hash');
+
+        async function loadTxDetails() {
+            try {
+                const res = await fetch(`/api/tx/${txHash}`);
+                const tx = await res.json();
+
+                document.getElementById('hash').innerText = tx.hash;
+                document.getElementById('status').innerText = tx.status;
+                document.getElementById('status').className = `status-badge ${tx.status}`;
+                document.getElementById('blockLink').innerText = `#${tx.block}`;
+                document.getElementById('blockLink').href = `/explorer/block.html?height=${tx.block}`;
+                document.getElementById('timestamp').innerText = new Date(tx.timestamp * 1000).toLocaleString();
+                document.getElementById('fromLink').innerText = tx.from;
+                document.getElementById('fromLink').href = `/explorer/address.html?addr=${tx.from}`;
+                document.getElementById('toLink').innerText = tx.to;
+                document.getElementById('toLink').href = `/explorer/address.html?addr=${tx.to}`;
+                document.getElementById('amount').innerText = `${tx.amount} RNR`;
+                document.getElementById('nonce').innerText = tx.nonce;
+            } catch (e) {
+                console.error('Failed to load transaction', e);
+                alert('Transaction not found');
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            try {
+                const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                window.location.href = `/explorer/${data.result}`;
+            } catch (e) {
+                alert('Search failed.');
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        loadTxDetails();
+    </script>
+</body>
+
+</html>

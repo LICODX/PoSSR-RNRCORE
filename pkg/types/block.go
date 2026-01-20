@@ -4,12 +4,15 @@ package types
 // Menggunakan array byte tetap untuk menghindari GC Overhead berlebih
 type Transaction struct {
 	ID        [32]byte // SHA-256 Hash
+	Type      int      // Transaction type (transfer, token, contract, etc)
 	Sender    [32]byte
 	Receiver  [32]byte
 	Amount    uint64
+	Fee       uint64 // Transaction fee (prevents spam, goes to miner)
+	Gas       uint64 // Gas limit for contract execution
 	Nonce     uint64
 	Signature [64]byte
-	Payload   []byte // Data Smart Contract (Optional)
+	Payload   []byte // Data for Smart Contracts (Optional)
 }
 
 // Block Header (Ringan, disimpan selamanya)

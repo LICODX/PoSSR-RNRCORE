@@ -12,4 +12,5 @@ rmdir /S /Q data logs 2>nul
 echo [2] Starting Node...
 echo.
 rnr-node.exe
+start http://localhost:8080
 pause

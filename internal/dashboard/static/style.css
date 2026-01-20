@@ -44,6 +44,66 @@ header {
     vertical-align: middle;
 }
 
+/* NEW: Wallet Panel */
+.wallet-panel {
+    padding: 20px 30px;
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+
+.wallet-balance {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #10b981;
+    margin: 10px 0;
+}
+
+.wallet-address {
+    margin-top: 10px;
+}
+
+.wallet-address small {
+    opacity: 0.6;
+    font-size: 0.8rem;
+}
+
+.wallet-address code {
+    color: #60a5fa;
+    font-size: 0.9rem;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+/* NEW: Mining Panel */
+.mining-panel {
+    padding: 20px 30px;
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+
+.mining-status {
+    font-size: 1.5rem;
+    color: #10b981;
+    margin: 10px 0;
+}
+
+.mining-info {
+    display: flex;
+    gap: 30px;
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.mining-info span {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

@@ -11,10 +11,11 @@ import (
 )
 
 type Blockchain struct {
-	store        *storage.Store
-	stateManager *state.Manager
-	mu           sync.RWMutex
-	tip          types.BlockHeader
+	store             *storage.Store
+	stateManager      *state.Manager
+	contractProcessor *ContractProcessor // NEW: for smart contract transactions
+	mu                sync.RWMutex
+	tip               types.BlockHeader
 }
 
 // NewBlockchain creates a new Blockchain instance
@@ -38,13 +39,15 @@ func NewBlockchain(db *storage.Store) *Blockchain {
 	// Check if genesis exists
 	if !db.HasBlock(0) {
 		// Initialize with Mainnet genesis by default
-		// TODO: Pass config to NewBlockchain to support Testnet
 		genesis := CreateGenesisBlock(true)
 		if err := db.SaveBlock(genesis); err != nil {
 			return nil
 		}
-		// Save genesis metadata
-		// ...
+		// CRITICAL: Set tip to genesis header after creation!
+		bc.tip = genesis.Header
+		tipData, _ := json.Marshal(bc.tip)
+		db.SaveTip(tipData)
+		fmt.Printf("🌍 Genesis Block Created. Hash: %x\n", bc.tip.Hash)
 	}
 
 	return bc
@@ -54,6 +57,20 @@ func (bc *Blockchain) GetTip() types.BlockHeader {
 	bc.mu.RLock()
 	defer bc.mu.RUnlock()
 	return bc.tip
+}
+
+// GetBlockByHeight retrieves a block header by its height
+func (bc *Blockchain) GetBlockByHeight(height uint64) *types.BlockHeader {
+	header, err := bc.store.GetBlockHeaderByHeight(height)
+	if err != nil {
+		return nil
+	}
+	return header
+}
+
+// GetStateManager returns the state manager for external access
+func (bc *Blockchain) GetStateManager() *state.Manager {
+	return bc.stateManager
 }
 
 // AddBlock validates and saves a block
@@ -101,9 +118,4 @@ func (bc *Blockchain) AddBlock(block types.Block) error {
 
 	fmt.Printf("⛓️  Block #%d added to chain.\n", block.Header.Height)
 	return nil
-}
-
-// GetStateManager returns the state manager for external use
-func (bc *Blockchain) GetStateManager() *state.Manager {
-	return bc.stateManager
 }

@@ -12,10 +12,21 @@ import (
 
 // ValidateTransaction verifies transaction signature and basic validity
 func ValidateTransaction(tx types.Transaction) error {
-	// 1. Check signature
-	message := types.SerializeTransaction(tx)
-	if !utils.Verify(tx.Sender[:], message, tx.Signature[:]) {
-		return fmt.Errorf("invalid signature for tx %x", tx.ID)
+	// 1. Check signature (Skip for Coinbase/System TX)
+	// Coinbase has empty sender [0...0]
+	isCoinbase := true
+	for _, b := range tx.Sender {
+		if b != 0 {
+			isCoinbase = false
+			break
+		}
+	}
+
+	if !isCoinbase {
+		message := types.SerializeTransaction(tx)
+		if !utils.Verify(tx.Sender[:], message, tx.Signature[:]) {
+			return fmt.Errorf("invalid signature for tx %x", tx.ID)
+		}
 	}
 
 	// 2. Basic sanity checks
@@ -23,7 +34,10 @@ func ValidateTransaction(tx types.Transaction) error {
 		return fmt.Errorf("zero amount transaction")
 	}
 
-	if tx.Sender == tx.Receiver {
+	// Allow Self-Transfer for Coinbase
+	// Reuse 'isCoinbase' from above (already calculated)
+
+	if !isCoinbase && tx.Sender == tx.Receiver {
 		return fmt.Errorf("sender and receiver are the same")
 	}
 
@@ -44,14 +58,25 @@ func ValidateTransactionAgainstState(tx types.Transaction, stateDir *state.Manag
 	}
 
 	// 3. Check Nonce (CRITICAL for Replay Protection)
-	// Expect Nonce = CurrentNonce + 1
-	if tx.Nonce != acc.Nonce+1 {
-		return fmt.Errorf("invalid nonce: expected %d, got %d", acc.Nonce+1, tx.Nonce)
+	// Skip for Coinbase
+	isCoinbase := true
+	for _, b := range tx.Sender {
+		if b != 0 {
+			isCoinbase = false
+			break
+		}
 	}
 
-	// 4. Check Balance (Prevent Mempool Spam)
-	if acc.Balance < tx.Amount {
-		return fmt.Errorf("insufficient balance: have %d, want %d", acc.Balance, tx.Amount)
+	if !isCoinbase {
+		// Expect Nonce = CurrentNonce + 1
+		if tx.Nonce != acc.Nonce+1 {
+			return fmt.Errorf("invalid nonce: expected %d, got %d", acc.Nonce+1, tx.Nonce)
+		}
+
+		// 4. Check Balance (Prevent Mempool Spam)
+		if acc.Balance < tx.Amount {
+			return fmt.Errorf("insufficient balance: have %d, want %d", acc.Balance, tx.Amount)
+		}
 	}
 
 	return nil
@@ -67,7 +92,8 @@ func ValidateBlock(block types.Block, prevHeader types.BlockHeader) error {
 
 	// 2. Validate previous block hash
 	if block.Header.Height > 0 {
-		expectedPrevHash := types.HashBlockHeader(prevHeader)
+		// Use PoW hash for comparison (excludes VRFSeed and MerkleRoot)
+		expectedPrevHash := types.HashBlockHeaderForPoW(prevHeader)
 		if block.Header.PrevBlockHash != expectedPrevHash {
 			return fmt.Errorf("invalid previous block hash")
 		}
@@ -79,15 +105,21 @@ func ValidateBlock(block types.Block, prevHeader types.BlockHeader) error {
 		return fmt.Errorf("block too large: %d bytes (max %d)", blockSize, params.MaxBlockSize)
 	}
 
-	// 4. Validate Merkle Root
-	var allTxHashes [][32]byte
+	// 4. Validate Merkle Root (2-Layer Calculation for Sharding)
+	var shardRoots [][32]byte
 	for _, shard := range block.Shards {
+		// Calculate root for this shard
+		var txHashes [][32]byte
 		for _, tx := range shard.TxData {
-			allTxHashes = append(allTxHashes, tx.ID)
+			txHashes = append(txHashes, tx.ID)
 		}
+		shardRoot := utils.CalculateMerkleRoot(txHashes)
+		shardRoots = append(shardRoots, shardRoot)
 	}
 
-	calculatedRoot := utils.CalculateMerkleRoot(allTxHashes)
+	// Calculate Global Root from Shard Roots
+	calculatedRoot := utils.CalculateMerkleRoot(shardRoots)
+
 	if block.Header.MerkleRoot != calculatedRoot {
 		return fmt.Errorf("merkle root mismatch: expected %x, got %x",
 			calculatedRoot, block.Header.MerkleRoot)

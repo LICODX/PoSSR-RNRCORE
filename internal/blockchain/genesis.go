@@ -11,7 +11,7 @@ import (
 
 const (
 	// Mainnet Genesis Timestamp (FIXED)
-	MainnetGenesisTimestamp = 1704067200 // 2024-01-01 00:00:00 UTC
+	MainnetGenesisTimestamp = 1735689600 // 2025-01-01 00:00:00 UTC
 
 	// Mainnet Genesis Wallet (MUST BE SET BEFORE LAUNCH)
 	MainnetGenesisWallet = "8150a6af22851558e96cb9faad6b7e9cd5961179deb84c784fdf5bbb5d57b263"
@@ -53,6 +53,10 @@ var (
 func CreateMainnetGenesis() types.Block {
 	// Return exact copy - NO RANDOMNESS
 	block := MainnetGenesisBlock
+
+	// CRITICAL: Calculate Hash using PoW hash function (consistent with all blocks)
+	block.Header.Hash = types.HashBlockHeaderForPoW(block.Header)
+
 	return block
 }
 

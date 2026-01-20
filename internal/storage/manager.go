@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/syndtr/goleveldb/leveldb"
-	"github.com/syndtr/goleveldb/leveldb/util"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/params"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
+	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 type Store struct {
@@ -89,4 +89,20 @@ func (s *Store) HasBlock(height uint64) bool {
 	key := []byte(fmt.Sprintf("block-header-%d", height))
 	_, err := s.db.Get(key, nil)
 	return err == nil
+}
+
+// GetBlockHeaderByHeight retrieves a block header by its height
+func (s *Store) GetBlockHeaderByHeight(height uint64) (*types.BlockHeader, error) {
+	key := []byte(fmt.Sprintf("block-header-%d", height))
+	data, err := s.db.Get(key, nil)
+	if err != nil {
+		return nil, fmt.Errorf("block header not found for height %d: %v", height, err)
+	}
+
+	var header types.BlockHeader
+	if err := json.Unmarshal(data, &header); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal block header: %v", err)
+	}
+
+	return &header, nil
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 // Account represents an account's state
@@ -83,14 +83,26 @@ func (m *Manager) ApplyTransaction(tx types.Transaction) error {
 		return err
 	}
 
-	// Check nonce (replay protection)
-	if tx.Nonce != sender.Nonce+1 {
-		return fmt.Errorf("invalid nonce: expected %d, got %d", sender.Nonce+1, tx.Nonce)
+	// Detect Coinbase (Sender = all zeros)
+	isCoinbase := true
+	for _, b := range tx.Sender {
+		if b != 0 {
+			isCoinbase = false
+			break
+		}
 	}
 
-	// Check balance
-	if sender.Balance < tx.Amount {
-		return fmt.Errorf("insufficient balance: has %d, needs %d", sender.Balance, tx.Amount)
+	// Skip state checks for Coinbase (System TX)
+	if !isCoinbase {
+		// Check nonce (replay protection)
+		if tx.Nonce != sender.Nonce+1 {
+			return fmt.Errorf("invalid nonce: expected %d, got %d", sender.Nonce+1, tx.Nonce)
+		}
+
+		// Check balance
+		if sender.Balance < tx.Amount {
+			return fmt.Errorf("insufficient balance: has %d, needs %d", sender.Balance, tx.Amount)
+		}
 	}
 
 	// Get receiver account

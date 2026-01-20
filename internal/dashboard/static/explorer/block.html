@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Details - RNRScan</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="explorer.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="explorer-nav">
+        <div class="nav-content">
+            <div class="logo" onclick="window.location.href='/explorer/'">🔍 RNRScan</div>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search by Block / TX Hash / Address">
+                <button onclick="performSearch()">Search</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="explorer-container">
+        <div class="page-header">
+            <h1>📦 Block <span id="blockHeight">Loading...</span></h1>
+        </div>
+
+        <div class="detail-card glass">
+            <h3>Block Information</h3>
+            <div class="detail-grid">
+                <div class="detail-row">
+                    <span class="detail-label">Block Height:</span>
+                    <span class="detail-value" id="height">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Block Hash:</span>
+                    <span class="detail-value mono" id="hash">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Previous Hash:</span>
+                    <span class="detail-value mono" id="prevHash">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Merkle Root:</span>
+                    <span class="detail-value mono" id="merkleRoot">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Timestamp:</span>
+                    <span class="detail-value" id="timestamp">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Difficulty:</span>
+                    <span class="detail-value" id="difficulty">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Nonce:</span>
+                    <span class="detail-value" id="nonce">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">VRF Seed:</span>
+                    <span class="detail-value mono" id="vrfSeed">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Transactions:</span>
+                    <span class="detail-value" id="txCount">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-card glass">
+            <h3>💸 Transactions</h3>
+            <div class="tx-list" id="txList">
+                <p style="opacity: 0.6;">Loading transactions...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const blockHeight = urlParams.get('height');
+
+        async function loadBlockDetails() {
+            try {
+                const res = await fetch(`/api/block/${blockHeight}`);
+                const block = await res.json();
+
+                document.getElementById('blockHeight').innerText = `#${block.height}`;
+                document.getElementById('height').innerText = block.height;
+                document.getElementById('hash').innerText = block.hash;
+                document.getElementById('prevHash').innerText = block.prevHash;
+                document.getElementById('merkleRoot').innerText = block.merkleRoot;
+                document.getElementById('timestamp').innerText = new Date(block.timestamp * 1000).toLocaleString();
+                document.getElementById('difficulty').innerText = block.difficulty;
+                document.getElementById('nonce').innerText = block.nonce;
+                document.getElementById('vrfSeed').innerText = block.vrfSeed;
+                document.getElementById('txCount').innerText = block.txCount;
+
+                // Mock transaction list for this block
+                document.getElementById('txList').innerHTML = `
+                    <div class="list-item">
+                        <div class="item-main">
+                            <span class="item-label">Coinbase TX</span>
+                            <span class="item-value confirmed">confirmed</span>
+                        </div>
+                        <div class="item-details">
+                            <span>Reward: 100 RNR</span>
+                            <span>To: Miner</span>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                console.error('Failed to load block', e);
+                alert('Block not found');
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            try {
+                const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                window.location.href = `/explorer/${data.result}`;
+            } catch (e) {
+                alert('Search failed.');
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        loadBlockDetails();
+    </script>
+</body>
+
+</html>

@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/LICODX/PoSSR-RNRCORE/internal/blockchain"
@@ -19,18 +23,101 @@ import (
 	"github.com/LICODX/PoSSR-RNRCORE/internal/p2p"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/storage"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
+	"github.com/LICODX/PoSSR-RNRCORE/pkg/wallet"
 )
 
 func main() {
 	port := flag.Int("port", 3000, "P2P listening port")
+	rpcPort := flag.Int("rpc-port", 9001, "RPC API port")
+	dashboardPort := flag.Int("dashboard-port", 9101, "Dashboard web UI port")
 	datadir := flag.String("datadir", "./data/chaindata", "Data directory for LevelDB")
+	datadirAlias := flag.String("data-dir", "", "Alias for -datadir")
 	peers := flag.String("peers", "", "Comma-separated peer addresses")
+	peerAlias := flag.String("peer", "", "Alias for -peers (single peer)")
+	_ = flag.String("log-file", "", "Log file path (optional, default: stdout)") // TODO: implement log file redirection
 	useGossipSub := flag.Bool("gossipsub", true, "Use GossipSub (recommended)")
+	isGenesis := flag.Bool("genesis", false, "Start as Genesis Node (Authority)")
+	walletPassword := flag.String("wallet-password", "", "Password for wallet encryption (optional)")
 	flag.Parse()
 
+	// Handle aliases
+	if *datadirAlias != "" {
+		*datadir = *datadirAlias
+	}
+	if *peerAlias != "" {
+		*peers = *peerAlias
+	}
+
 	fmt.Println("🚀 Starting rnr-core Mainnet Node...")
-	fmt.Printf("Config: Port=%d | DataDir=%s\n", *port, *datadir)
+	fmt.Printf("Config: Port=%d | RPC=%d | Dashboard=%d | DataDir=%s\n", *port, *rpcPort, *dashboardPort, *datadir)
 	fmt.Println("Consensus: PoSSR | Block Size: 1 GB | Pruning: ON")
+
+	// 1a. Load or Create Node Wallet
+	walletPath := filepath.Join(*datadir, "node_wallet.json")
+	var nodeWallet *wallet.Wallet
+
+	if *isGenesis {
+		fmt.Println("[GENESIS] Starting as Genesis Authority Node")
+
+		// SECURITY: Get Genesis mnemonic from environment variable (not hardcoded!)
+		genesisMnemonic := os.Getenv("GENESIS_MNEMONIC")
+		if genesisMnemonic == "" {
+			// Fallback: Check for genesis.secret file
+			secretPath := filepath.Join(*datadir, "genesis.secret")
+			if data, err := os.ReadFile(secretPath); err == nil {
+				genesisMnemonic = strings.TrimSpace(string(data))
+			}
+		}
+
+		if genesisMnemonic == "" {
+			fmt.Println("[ERROR] Genesis mnemonic not found!")
+			fmt.Println("  Option 1: Set GENESIS_MNEMONIC environment variable")
+			fmt.Println("  Option 2: Create data/genesis.secret file with mnemonic")
+			fmt.Println("  Generate new mnemonic: go run cmd/genesis-wallet/main.go")
+			return
+		}
+
+		w, err := wallet.CreateWalletFromMnemonic(genesisMnemonic)
+		if err != nil {
+			fmt.Printf("Failed to restore Genesis wallet: %v\n", err)
+			return
+		}
+		nodeWallet = w
+
+		// Save Genesis wallet (encrypted if password provided)
+		if *walletPassword != "" {
+			ks := wallet.NewKeyStore(walletPath)
+			if err := ks.Save(nodeWallet, *walletPassword); err != nil {
+				fmt.Printf("Failed to save encrypted Genesis wallet: %v\n", err)
+				return
+			}
+			fmt.Println("[GENESIS] Wallet saved (ENCRYPTED)")
+		} else {
+			data, _ := json.MarshalIndent(nodeWallet, "", "  ")
+			os.WriteFile(walletPath, data, 0600)
+			fmt.Println("[GENESIS] Wallet saved (CLEARTEXT - use -wallet-password for encryption)")
+		}
+		fmt.Printf("[GENESIS] Wallet Loaded: %s\n", nodeWallet.Address)
+	} else {
+		// Try to load existing wallet
+		if data, err := os.ReadFile(walletPath); err == nil {
+			if err := json.Unmarshal(data, &nodeWallet); err == nil {
+				fmt.Printf("[WALLET] Loaded: %s\n", nodeWallet.Address)
+			}
+		} else {
+			// No wallet - auto-create new one
+			fmt.Println("  [WALLET] Generating new wallet...")
+			newWallet, err := wallet.CreateWallet()
+			if err != nil {
+				fmt.Printf(" Failed to create wallet: %v\n", err)
+				return
+			}
+			nodeWallet = newWallet
+			data, _ := json.MarshalIndent(nodeWallet, "", "  ")
+			os.WriteFile(walletPath, data, 0600)
+			fmt.Printf(" [WALLET] Created: %s\n", nodeWallet.Address)
+		}
+	}
 
 	// 1. Initialize Database
 	db, err := storage.NewLevelDB(*datadir)
@@ -70,7 +157,7 @@ func main() {
 		node.DiscoverPeers()
 
 		node.ListenForBlocks(func(data []byte) {
-			fmt.Println("📦 Received block from network")
+			fmt.Println("[P2P] Received block from network")
 			var block types.Block
 			if err := json.Unmarshal(data, &block); err != nil {
 				fmt.Printf("Failed to decode block: %v\n", err)
@@ -112,9 +199,55 @@ func main() {
 		return
 	}
 
+	// 5a. GUEST MODE: Auto-Register with Genesis if no wallet
+	if nodeWallet == nil {
+		fmt.Println("[GUEST] Attempting to register with Bootnode...")
+		go func() {
+			// Retry loop
+			for {
+				time.Sleep(5 * time.Second)
+				resp, err := http.Post("http://127.0.0.1:8080/api/register", "application/json", nil)
+				if err != nil {
+					fmt.Printf("[FAIL] Connection Failed: %v. Retrying...\n", err)
+					continue
+				}
+
+				if resp.StatusCode != 200 {
+					fmt.Printf("[FAIL] Registration Denied: Status %d. Retrying...\n", resp.StatusCode)
+					resp.Body.Close()
+					continue
+				}
+
+				var newWallet wallet.Wallet
+				if err := json.NewDecoder(resp.Body).Decode(&newWallet); err != nil {
+					fmt.Printf("[FAIL] Decode Failed: %v\n", err)
+					resp.Body.Close()
+					continue
+				}
+				resp.Body.Close()
+
+				// Save
+				data, _ := json.MarshalIndent(newWallet, "", "  ")
+				os.WriteFile(walletPath, data, 0600)
+
+				fmt.Printf("[SUCCESS] REGISTRATION COMPLETE! Wallet: %s\n", newWallet.Address)
+				nodeWallet = &newWallet
+				return
+			}
+		}()
+
+		// Wait for registration before mining
+		fmt.Println("[WAIT] Waiting for registration...")
+		for nodeWallet == nil {
+			time.Sleep(1 * time.Second)
+		}
+		fmt.Println("[SUCCESS] Identity Confirmed. Starting Mining...")
+	}
+
 	// 5. Start GUI Dashboard
 	// Pass 'node' which implements MempoolSource
-	dashboard.StartServer("8080", chain, node)
+	dashboardPortStr := fmt.Sprintf("%d", *dashboardPort)
+	go dashboard.StartServer(dashboardPortStr, chain, node, nodeWallet) // Pass wallet
 
 	// 6. Mining Loop (Proof of Repeated Sorting)
 	fmt.Println("🏁 Mining Loop Started. Searching for a valid block...")
@@ -126,22 +259,28 @@ func main() {
 		// Get transactions from P2P mempool
 		txs := node.GetMempoolShard()
 
-		if len(txs) == 0 {
-			// For Demo: If empty, add a mock transaction so we can mine
-			// In production, we would wait.
-			// fmt.Println("Waiting for transactions...")
-			time.Sleep(2 * time.Second)
-			node.AddToMempool(types.Transaction{
-				ID:     [32]byte{1, 2, 3},
-				Amount: 100,
-				Nonce:  uint64(time.Now().UnixNano()),
-			})
-			continue
+		//MAINNET MODE: Mine even if mempool is empty (empty blocks are valid)
+
+		// Create Coinbase Transaction (Block Reward)
+		var minerAddress [32]byte
+		copy(minerAddress[:], nodeWallet.PublicKey)
+
+		coinbaseTx := types.Transaction{
+			ID:        [32]byte{1, 1, 1, 1, byte(lastHeader.Height)},
+			Sender:    [32]byte{}, // System
+			Receiver:  minerAddress,
+			Amount:    uint64(params.InitialReward),
+			Nonce:     0, // System TX
+			Signature: [64]byte{},
 		}
 
-		fmt.Printf("🔨 Mining on top of Block #%d [Diff: %d] with %d txs\n", lastHeader.Height, difficulty, len(txs))
+		// Prepend Coinbase to transactions
+		minableTxs := append([]types.Transaction{coinbaseTx}, txs...)
 
-		newBlock, err := consensus.MineBlock(txs, lastHeader, difficulty, stopMining)
+		fmt.Printf("[MINING] Block #%d [Diff: %d] | TXs: %d (inc. Coinbase) | Reward -> %s\n",
+			lastHeader.Height+1, difficulty, len(minableTxs), nodeWallet.Address[:20]+"...")
+
+		newBlock, err := consensus.MineBlock(minableTxs, lastHeader, difficulty, stopMining)
 
 		if err != nil {
 			if err.Error() == "mining interrupted" {
@@ -152,7 +291,7 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("💎 Block Found! Nonce: %d | Hash: %x\n", newBlock.Header.Nonce, newBlock.Header.Hash)
+		fmt.Printf("[SUCCESS] Block Found! Nonce: %d | Hash: %x\n", newBlock.Header.Nonce, newBlock.Header.Hash)
 
 		// Add to local chain
 		if err := chain.AddBlock(*newBlock); err != nil {
@@ -160,10 +299,10 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("✅ Block Accepted! Height: %d\n", newBlock.Header.Height)
+		fmt.Printf("[OK] Block Accepted! Height: %d\n", newBlock.Header.Height)
 
 		// THROTTLE: Wait for BlockTime (6s) to ensure consistent heartbeat
-		fmt.Printf("⏳ Waiting %d seconds for next round...\n", params.BlockTime)
+		fmt.Printf("[WAIT] Waiting %d seconds for next round...\n", params.BlockTime)
 		time.Sleep(time.Duration(params.BlockTime) * time.Second)
 
 		// Broadcast Block
@@ -175,3 +314,4 @@ func main() {
 		node.ClearMempool()
 	}
 }
+

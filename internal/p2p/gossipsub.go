@@ -224,7 +224,7 @@ func (n *GossipSubNode) DiscoverPeers() {
 
 		for range ticker.C {
 			peers := n.GetPeers()
-			fmt.Printf("📡 Connected to %d peers\n", len(peers))
+			fmt.Printf("[P2P] Connected to %d peers\n", len(peers))
 			for i, p := range peers {
 				if i < 5 { // Show first 5
 					fmt.Printf("   - %s\n", p)

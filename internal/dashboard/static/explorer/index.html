@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RNRScan - RNR Blockchain Explorer</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="explorer.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="explorer-nav">
+        <div class="nav-content">
+            <div class="logo">🔍 RNRScan</div>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search by Block / TX Hash / Address">
+                <button onclick="performSearch()">Search</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="explorer-container">
+        <div class="stats-grid">
+            <div class="stat-card glass">
+                <h4>Latest Block</h4>
+                <h2 id="latestBlock">0</h2>
+            </div>
+            <div class="stat-card glass">
+                <h4>Total Transactions</h4>
+                <h2 id="totalTxs">0</h2>
+            </div>
+            <div class="stat-card glass">
+                <h4>Network TPS</h4>
+                <h2 id="networkTps">0</h2>
+            </div>
+        </div>
+
+        <div class="explorer-grid">
+            <div class="explorer-section glass">
+                <h3>📦 Latest Blocks</h3>
+                <div class="blocks-list" id="blocksList">
+                    Loading...
+                </div>
+            </div>
+
+            <div class="explorer-section glass">
+                <h3>💸 Latest Transactions</h3>
+                <div class="tx-list" id="txList">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchBlocks() {
+            try {
+                const res = await fetch('/api/blocks');
+                const data = await res.json();
+
+                const blocksList = document.getElementById('blocksList');
+                blocksList.innerHTML = '';
+
+                data.blocks.forEach(block => {
+                    const blockEl = document.createElement('div');
+                    blockEl.className = 'list-item';
+                    blockEl.innerHTML = `
+                        <div class="item-main">
+                            <span class="item-label">Block #${block.height}</span>
+                            <span class="item-value">${new Date(block.timestamp * 1000).toLocaleTimeString()}</span>
+                        </div>
+                        <div class="item-details">
+                            <span>Hash: ${block.hash}...</span>
+                            <span>${block.txCount} txs</span>
+                        </div>
+                    `;
+                    blockEl.onclick = () => window.location.href = `/explorer/block.html?height=${block.height}`;
+                    blocksList.appendChild(blockEl);
+                });
+
+                document.getElementById('latestBlock').innerText = data.total;
+            } catch (e) {
+                console.error('Failed to fetch blocks', e);
+            }
+        }
+
+        async function fetchTransactions() {
+            try {
+                const res = await fetch('/api/transactions');
+                const data = await res.json();
+
+                const txList = document.getElementById('txList');
+                txList.innerHTML = '';
+
+                data.transactions.forEach(tx => {
+                    const txEl = document.createElement('div');
+                    txEl.className = 'list-item';
+                    txEl.innerHTML = `
+                        <div class="item-main">
+                            <span class="item-label">TX ${tx.hash.substring(0, 16)}...</span>
+                            <span class="item-value ${tx.status}">${tx.status}</span>
+                        </div>
+                        <div class="item-details">
+                            <span>From: ${tx.from}...</span>
+                            <span>Amount: ${tx.amount} RNR</span>
+                        </div>
+                    `;
+                    txEl.onclick = () => window.location.href = `/explorer/tx.html?hash=${tx.hash}`;
+                    txList.appendChild(txEl);
+                });
+
+                document.getElementById('totalTxs').innerText = data.total;
+            } catch (e) {
+                console.error('Failed to fetch transactions', e);
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                document.getElementById('networkTps').innerText = data.tps;
+            } catch (e) {
+                console.error('Failed to fetch stats', e);
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            try {
+                const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                window.location.href = `/explorer/${data.result}`;
+            } catch (e) {
+                alert('Search failed. Please check your input.');
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        setInterval(() => {
+            fetchBlocks();
+            fetchTransactions();
+            fetchStats();
+        }, 3000);
+
+        fetchBlocks();
+        fetchTransactions();
+        fetchStats();
+    </script>
+</body>
+
+</html>

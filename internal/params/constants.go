@@ -2,7 +2,7 @@ package params
 
 const (
 	// Dimensi Blok & Shard
-	BlockTime    = 6                  // 6 Detik (10 Blocks/min)
+	BlockTime    = 60                 // 60 Detik - Mainnet Production
 	MaxBlockSize = 1024 * 1024 * 1024 // 1 GB Total (10 Shards x 100 MB)
 	ShardSize    = 100 * 1024 * 1024  // 100 MB per Node
 	NumShards    = 10                 // 10 Pemenang per Blok
@@ -14,7 +14,10 @@ const (
 	DecayRate       = 0.07    // 7%
 
 	// Storage
-	PruningWindow = 2880 // Keep 48 hours of blocks (was 25)
+	PruningWindow = 25 // Keep 25 blocks (~25 minutes of data) - Whitepaper Spec
+
+	// Transaction Fees (Anti-Spam)
+	MinTxFee = 1 // Minimum 1 unit (0.000001 RNR) per transaction
 
 	// Network
 	// Network
