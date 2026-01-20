@@ -101,3 +101,22 @@ Now that **Computer A** (Genesis) is running and accessible externally, **Comput
 ### "No Peers Found"?
 - Ensure you copied the full Multiaddr correctly, including the `/p2p/Qm...` part.
 - Try pinging Computer A's IP address from Computer B: `ping 203.0.113.5`.
+
+---
+
+## ⚡ Easy Connect (Automatic Mode)
+
+Instead of typing the long `--peer` flag every time, you can configure it once in `config/mainnet.yaml`.
+
+1.  Open `config/mainnet.yaml` in a text editor.
+2.  Find the `seed_nodes` section.
+3.  Add your Genesis Node's address:
+    ```yaml
+    seed_nodes:
+      - "/ip4/203.0.113.5/tcp/8001/p2p/QmYourGenesisNodeID..."
+    ```
+4.  Run the node without flags:
+    ```bash
+    ./rnr-node
+    ```
+    It will automatically load the config and connect to the seed node!

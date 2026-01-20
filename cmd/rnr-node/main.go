@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/LICODX/PoSSR-RNRCORE/internal/blockchain"
+	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/consensus"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/dashboard"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/params"
@@ -20,6 +21,7 @@ import (
 
 	// 5. Start GUI Dashboard (Disabled for Headless Build)
 	// dashboard.StartServer("8080", chain, nil)
+	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/p2p"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/storage"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
@@ -40,12 +42,39 @@ func main() {
 	walletPassword := flag.String("wallet-password", "", "Password for wallet encryption (optional)")
 	flag.Parse()
 
+	configPath := flag.String("config", "config/mainnet.yaml", "Path to configuration file")
+	flag.Parse()
+
 	// Handle aliases
 	if *datadirAlias != "" {
 		*datadir = *datadirAlias
 	}
 	if *peerAlias != "" {
 		*peers = *peerAlias
+	}
+
+	// 0. Load Configuration (if exists)
+	// We prioritize Flags > Config File > Defaults
+	var cfg *config.Config
+	if *configPath != "" {
+		loadedCfg, err := config.LoadConfig(*configPath)
+		if err == nil {
+			fmt.Printf("📄 Loaded config from %s\n", *configPath)
+			cfg = loadedCfg
+		} else {
+			// Only warn if user explicitly provided a non-default path
+			if *configPath != "config/mainnet.yaml" {
+				fmt.Printf("⚠️ Warning: Failed to load config: %v\n", err)
+			}
+		}
+	}
+
+	// Apply Config Defaults if Flags are unset/default
+	if cfg != nil {
+		if *port == 3000 && cfg.Network.ListenPort != 0 {
+			*port = cfg.Network.ListenPort
+		}
+		// Assuming dashboard port might be in config too, but for now focus on Network
 	}
 
 	fmt.Println("🚀 Starting rnr-core Mainnet Node...")
@@ -152,6 +181,21 @@ func main() {
 
 		if *peers != "" {
 			fmt.Printf("Connecting to peers: %s\n", *peers)
+			peerList := strings.Split(*peers, ",")
+			for _, p := range peerList {
+				node.ConnectToPeer(strings.TrimSpace(p))
+			}
+		} else if cfg != nil && len(cfg.Network.SeedNodes) > 0 {
+			fmt.Println("🌱 Connecting to Seed Nodes from config...")
+			for _, seed := range cfg.Network.SeedNodes {
+				// Skip placeholders
+				if strings.Contains(seed, "seed1.rnr.network") {
+					continue
+				}
+				if err := node.ConnectToPeer(seed); err != nil {
+					fmt.Printf("   ⚠️ Failed to connect to seed %s: %v\n", seed, err)
+				}
+			}
 		}
 
 		node.DiscoverPeers()
@@ -314,4 +358,3 @@ func main() {
 		node.ClearMempool()
 	}
 }
-
