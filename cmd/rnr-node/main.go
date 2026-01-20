@@ -21,8 +21,8 @@ import (
 
 	// 5. Start GUI Dashboard (Disabled for Headless Build)
 	// dashboard.StartServer("8080", chain, nil)
-	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/p2p"
+
 	"github.com/LICODX/PoSSR-RNRCORE/internal/storage"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/wallet"
