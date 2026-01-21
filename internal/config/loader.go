@@ -9,13 +9,19 @@ import (
 
 // Config represents the structure of mainnet.yaml
 type Config struct {
-	Network NetworkConfig `yaml:"network"`
+	Network  NetworkConfig `yaml:"network"`
+	Sharding ShardConfig   `yaml:"sharding"`
 }
 
 type NetworkConfig struct {
 	ListenPort int      `yaml:"listen_port"`
 	SeedNodes  []string `yaml:"seed_nodes"`
 	MaxPeers   int      `yaml:"max_peers"`
+}
+
+type ShardConfig struct {
+	Role     string `yaml:"role"`      // "FullNode", "ShardNode"
+	ShardIDs []int  `yaml:"shard_ids"` // List of shards to sync (0-9)
 }
 
 // LoadConfig reads and parses a YAML configuration file

@@ -13,6 +13,11 @@ network:
   
   max_peers: 50
 
+# Sharding Configuration (Distributed Processing)
+sharding:
+  role: "FullNode" # Options: "FullNode" (All Shards) or "ShardNode" (Specific Shards)
+  shard_ids: []    # If Role is ShardNode, list IDs here (e.g. [0, 1]). Ignored for FullNode.
+
 # Storage Config
 storage:
   data_dir: "./data/chaindata"

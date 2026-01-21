@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/LICODX/PoSSR-RNRCORE/internal/blockchain"
+	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/state"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/storage"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
@@ -174,7 +175,9 @@ func simulateRound(nodes []*Node, roundNum int) {
 
 		// We use the actual validation function from internal/blockchain
 		// Note: We need a mock header. Validation expects (Block, PrevHeader)
-		err := blockchain.ValidateBlock(badBlock, types.BlockHeader{Height: 0})
+		// Use default FullNode config for adversarial test
+		defaultCfg := config.ShardConfig{Role: "FullNode", ShardIDs: []int{}}
+		err := blockchain.ValidateBlock(badBlock, types.BlockHeader{Height: 0}, defaultCfg)
 
 		if err != nil {
 			fmt.Printf("   ✅ PROPOSAL SLASHED! Verification checks failed: %v\n", err)

@@ -121,6 +121,7 @@ func MineBlock(txs []types.Transaction, prevBlock types.BlockHeader, difficulty 
 			// NOTE: Do NOT recalculate hash! PoW hash (line 53) is the final hash
 			header.VRFSeed = seed
 			header.MerkleRoot = globalMerkleRoot
+			header.ShardRoots = shardRoots // Distributed Validation Support
 			// Hash was already set at line 53 during PoW
 
 			// 11. Construct Full Block

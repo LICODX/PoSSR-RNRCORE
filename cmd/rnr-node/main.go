@@ -157,7 +157,12 @@ func main() {
 	defer db.GetDB().Close()
 
 	// 2. Initialize Blockchain State
-	chain := blockchain.NewBlockchain(db)
+	// Default to FullNode if no config loaded
+	shardCfg := config.ShardConfig{Role: "FullNode", ShardIDs: []int{}}
+	if cfg != nil {
+		shardCfg = cfg.Sharding
+	}
+	chain := blockchain.NewBlockchain(db, shardCfg)
 	tip := chain.GetTip()
 	fmt.Printf("⛓️  Current Tip: Block #%d\n", tip.Height)
 
@@ -172,7 +177,13 @@ func main() {
 
 	if *useGossipSub {
 		var err error
-		node, err = p2p.NewGossipSubNode(ctx, *port)
+		// Default config if nil
+		shardCfg := config.ShardConfig{Role: "FullNode", ShardIDs: []int{}}
+		if cfg != nil {
+			shardCfg = cfg.Sharding
+		}
+
+		node, err = p2p.NewGossipSubNode(ctx, *port, shardCfg)
 		if err != nil {
 			fmt.Printf("Failed to start GossipSub: %v\n", err)
 			return
@@ -200,21 +211,41 @@ func main() {
 
 		node.DiscoverPeers()
 
-		node.ListenForBlocks(func(data []byte) {
-			fmt.Println("[P2P] Received block from network")
-			var block types.Block
-			if err := json.Unmarshal(data, &block); err != nil {
-				fmt.Printf("Failed to decode block: %v\n", err)
+		node.DiscoverPeers()
+
+		// 4a. Listen for HEADERS
+		node.ListenForHeaders(func(data []byte) {
+			var header types.BlockHeader
+			if err := json.Unmarshal(data, &header); err != nil {
 				return
 			}
-			if err := chain.AddBlock(block); err == nil {
-				// Signal to restart mining on new head
-				select {
-				case stopMining <- struct{}{}:
-				default:
-				}
-			}
+			fmt.Printf("📦 Header Received: #%d (Hash: %x)\n", header.Height, header.Hash)
+
+			// TODO (Distributed): We need a 'BlockAssembler' to wait for shards.
+			// For now, we just pass a skeleton block to chain?
+			// No, chain.AddBlock will reject it.
+			// We delay full integration until M3 (Validation Update).
 		})
+
+		// 4b. Listen for SHARDS (Configured)
+		// We loop through our interested shards
+		listeningShards := []int{}
+		if cfg != nil && cfg.Sharding.Role == "ShardNode" {
+			listeningShards = cfg.Sharding.ShardIDs
+		} else {
+			for i := 0; i < 10; i++ {
+				listeningShards = append(listeningShards, i)
+			}
+		}
+
+		for _, shardID := range listeningShards {
+			// Capture loop variable
+			sID := shardID
+			node.ListenForShards(sID, func(data []byte) {
+				fmt.Printf("🧩 Shard Data Received for Shard %d\n", sID)
+				// TODO: Process Shard Data
+			})
+		}
 
 		node.ListenForTransactions(func(data []byte) {
 			fmt.Println("💸 Received transaction from network")
@@ -349,10 +380,9 @@ func main() {
 		fmt.Printf("[WAIT] Waiting %d seconds for next round...\n", params.BlockTime)
 		time.Sleep(time.Duration(params.BlockTime) * time.Second)
 
-		// Broadcast Block
-		if blockBytes, err := json.Marshal(*newBlock); err == nil {
-			node.PublishBlock(blockBytes)
-		}
+		// Broadcast Block (Split into Header + Shards)
+		// PublishBlock now takes types.Block struct
+		node.PublishBlock(*newBlock)
 
 		// Clear mempool (Simplified)
 		node.ClearMempool()

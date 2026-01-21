@@ -1,2 +1,0 @@
-ADDRESS=rnr1pq03gqs8zg0sgqg7zsw3u8sgqqdp7rsrzuy3wxg7pyyqxrcspsr3cqq7qvqs78c2zyrpqzqdqvfq7xs8pcgq2m9d04
-MNEMONIC=hello foil music strong into suspect pond bar vacant still cover boy

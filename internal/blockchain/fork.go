@@ -53,7 +53,9 @@ func (bc *Blockchain) ResolveFork(alternativeChain []types.Block) error {
 			prevHeader = alternativeChain[i-1].Header
 		}
 
-		if err := ValidateBlock(block, prevHeader); err != nil {
+		// Use node's shard config (assuming full node for fork resolution or bc.shardConfig)
+		// Since we are reorganizing, we should use our own config.
+		if err := ValidateBlock(block, prevHeader, bc.shardConfig); err != nil {
 			return fmt.Errorf("invalid block in alternative chain: %v", err)
 		}
 	}

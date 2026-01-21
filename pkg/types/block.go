@@ -26,6 +26,7 @@ type BlockHeader struct {
 	Difficulty    uint64       // Target for the hash
 	Hash          [32]byte     // Block Hash
 	WinningNodes  [10][32]byte // PubKey 10 Pemenang
+	ShardRoots    [10][32]byte // Merkle Roots of each Shard (New for Distributed Validation)
 	VRFSeed       [32]byte     // Seed untuk blok berikutnya
 }
 

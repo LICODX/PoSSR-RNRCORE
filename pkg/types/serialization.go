@@ -33,6 +33,9 @@ func SerializeBlockHeader(h BlockHeader) []byte {
 	for _, node := range h.WinningNodes {
 		buf.Write(node[:])
 	}
+	for _, root := range h.ShardRoots {
+		buf.Write(root[:])
+	}
 	buf.Write(h.VRFSeed[:])
 	return buf.Bytes()
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/state"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/storage"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
@@ -16,13 +17,15 @@ type Blockchain struct {
 	contractProcessor *ContractProcessor // NEW: for smart contract transactions
 	mu                sync.RWMutex
 	tip               types.BlockHeader
+	shardConfig       config.ShardConfig
 }
 
 // NewBlockchain creates a new Blockchain instance
-func NewBlockchain(db *storage.Store) *Blockchain {
+func NewBlockchain(db *storage.Store, shardCfg config.ShardConfig) *Blockchain {
 	bc := &Blockchain{
 		store:        db,
 		stateManager: state.NewManager(db.GetDB()),
+		shardConfig:  shardCfg,
 	}
 
 	// Try to load tip from DB
@@ -85,7 +88,7 @@ func (bc *Blockchain) AddBlock(block types.Block) error {
 
 	// 2. Comprehensive validation
 	if block.Header.Height > 0 {
-		if err := ValidateBlock(block, bc.tip); err != nil {
+		if err := ValidateBlock(block, bc.tip, bc.shardConfig); err != nil {
 			return fmt.Errorf("block validation failed: %v", err)
 		}
 	}

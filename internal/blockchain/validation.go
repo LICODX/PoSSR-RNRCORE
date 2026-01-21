@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/params"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/state"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
@@ -84,7 +85,7 @@ func ValidateTransactionAgainstState(tx types.Transaction, stateDir *state.Manag
 }
 
 // ValidateBlock performs comprehensive block validation
-func ValidateBlock(block types.Block, prevHeader types.BlockHeader) error {
+func ValidateBlock(block types.Block, prevHeader types.BlockHeader, shardCfg config.ShardConfig) error {
 	// 1. Validate timestamp (not too far in future)
 	now := time.Now().Unix()
 	if block.Header.Timestamp > now+600 {
@@ -107,58 +108,78 @@ func ValidateBlock(block types.Block, prevHeader types.BlockHeader) error {
 	}
 
 	// 4. Validate Merkle Root (2-Layer Calculation for Sharding)
-	var shardRoots [][32]byte
-	for _, shard := range block.Shards {
-		// Calculate root for this shard
-		var txHashes [][32]byte
-		for _, tx := range shard.TxData {
-			txHashes = append(txHashes, tx.ID)
+	// A. Verify that Header.ShardRoots form Header.MerkleRoot
+	// Convert [10][32]byte to [][32]byte for util function
+	var shardRootSlice [][32]byte
+	for _, root := range block.Header.ShardRoots {
+		shardRootSlice = append(shardRootSlice, root)
+	}
+
+	recalculatedGlobalRoot := utils.CalculateMerkleRoot(shardRootSlice)
+	if recalculatedGlobalRoot != block.Header.MerkleRoot {
+		return fmt.Errorf("global merkle root mismatch: expected %x, got %x",
+			block.Header.MerkleRoot, recalculatedGlobalRoot)
+	}
+
+	// 5. Validate Shards (Partial Validation based on Config)
+	// Identify shards we MUST validate
+	shardsToValidate := make(map[int]bool)
+	if shardCfg.Role == "FullNode" {
+		for i := 0; i < 10; i++ {
+			shardsToValidate[i] = true
 		}
-		shardRoot := utils.CalculateMerkleRoot(txHashes)
-		shardRoots = append(shardRoots, shardRoot)
+	} else {
+		for _, id := range shardCfg.ShardIDs {
+			shardsToValidate[id] = true
+		}
 	}
 
-	// Calculate Global Root from Shard Roots
-	calculatedRoot := utils.CalculateMerkleRoot(shardRoots)
-
-	if block.Header.MerkleRoot != calculatedRoot {
-		return fmt.Errorf("merkle root mismatch: expected %x, got %x",
-			calculatedRoot, block.Header.MerkleRoot)
-	}
-
-	// 5. Validate all transactions AND Sorting Order
 	for shardID, shard := range block.Shards {
-		// A. Validate Transactions
-		for _, tx := range shard.TxData {
-			if err := ValidateTransaction(tx); err != nil {
-				return fmt.Errorf("invalid transaction in block: %v", err)
-			}
-		}
+		// Only validate if we are responsible for this shard OR if data is opportunistically present
+		// STRICT MODE: If we are responsible, we MUST have data.
+		isResponsible := shardsToValidate[shardID]
 
-		// B. VERIFY SORTING ORDER (O(N) - Linear Scan)
-		// We do NOT re-sort. We just check if Tx[i] <= Tx[i+1]
-
-		// 1. Determine Algorithm & Seeds
-		// VRF Seed was used to select Algo (already in Header)
-		// We need to reconstruct the "Sorting Key" for each tx.
-		// Note: We need access to consensus package for SelectAlgorithm/MixHash
-		// For now, we assume implicit knowledge or move helper functions to shared package.
-		// To avoid cycle, we perform a loose check or duplicate MixHash logic here.
-
-		// Re-deriving shard seed:
-		// shardSeed := sha256.Sum256(append(block.Header.VRFSeed[:], byte(shardID)))
-
-		// Optimization: Check order linearly
-		if len(shard.TxData) > 1 {
-			shardSeed := sha256.Sum256(append(block.Header.VRFSeed[:], byte(shardID)))
-			prevKey := utils.MixHash(shard.TxData[0].ID, shardSeed)
-			for i := 1; i < len(shard.TxData); i++ {
-				currKey := utils.MixHash(shard.TxData[i].ID, shardSeed)
-				if currKey < prevKey {
-					return fmt.Errorf("shard %d is NOT sorted! Cheating detected at index %d", shardID, i)
+		if isResponsible {
+			if len(shard.TxData) == 0 && shard.ShardRoot != ([32]byte{}) {
+				// Warn: We expected data but got none?
+				// Empty shard is valid if ShardRoot corresponds to Empty List.
+				// But if Root != EmptyRoot, then we are missing data!
+				emptyRoot := utils.CalculateMerkleRoot(nil)
+				if block.Header.ShardRoots[shardID] != emptyRoot {
+					return fmt.Errorf("missing data for assigned shard %d", shardID)
 				}
-				prevKey = currKey
 			}
+
+			// A. Validate Transactions & Recalculate Shard Root
+			var txHashes [][32]byte
+			for _, tx := range shard.TxData {
+				if err := ValidateTransaction(tx); err != nil {
+					return fmt.Errorf("invalid transaction in shard %d: %v", shardID, err)
+				}
+				txHashes = append(txHashes, tx.ID)
+			}
+
+			calculatedShardRoot := utils.CalculateMerkleRoot(txHashes)
+			if calculatedShardRoot != block.Header.ShardRoots[shardID] {
+				return fmt.Errorf("shard %d root mismatch: expected %x, got %x",
+					shardID, block.Header.ShardRoots[shardID], calculatedShardRoot)
+			}
+
+			// B. VERIFY SORTING ORDER (O(N) - Linear Scan)
+			if len(shard.TxData) > 1 {
+				shardSeed := sha256.Sum256(append(block.Header.VRFSeed[:], byte(shardID)))
+				prevKey := utils.MixHash(shard.TxData[0].ID, shardSeed)
+				for i := 1; i < len(shard.TxData); i++ {
+					currKey := utils.MixHash(shard.TxData[i].ID, shardSeed)
+					if currKey < prevKey {
+						return fmt.Errorf("shard %d is NOT sorted! Cheating detected at index %d", shardID, i)
+					}
+					prevKey = currKey
+				}
+			}
+		} else {
+			// We are NOT responsible. Trust the Header's ShardRoot.
+			// (Verified by Committee/Others)
 		}
 	}
 

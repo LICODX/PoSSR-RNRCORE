@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/LICODX/PoSSR-RNRCORE/internal/blockchain"
+	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/storage"
 )
 
@@ -34,7 +35,7 @@ func TestBlockchainInitialization(t *testing.T) {
 	defer db.GetDB().Close()
 
 	// Initialize blockchain
-	chain := blockchain.NewBlockchain(db)
+	chain := blockchain.NewBlockchain(db, config.ShardConfig{Role: "FullNode", ShardIDs: []int{}})
 	tip := chain.GetTip()
 
 	if tip.Height != 0 {

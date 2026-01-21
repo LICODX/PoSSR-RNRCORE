@@ -2,10 +2,12 @@ package p2p
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -16,7 +18,8 @@ import (
 
 const (
 	// Topics
-	TopicBlocks       = "rnr/blocks/1.0.0"
+	TopicHeader       = "rnr/header/1.0.0" // Base header (Small)
+	TopicShardPrefix  = "rnr/shard/"       // + shardID (e.g. rnr/shard/0/1.0.0)
 	TopicTransactions = "rnr/transactions/1.0.0"
 	TopicProofs       = "rnr/proofs/1.0.0"
 )
@@ -27,21 +30,34 @@ type GossipSubNode struct {
 	pubsub *pubsub.PubSub
 	ctx    context.Context
 
-	blockTopic *pubsub.Topic
-	txTopic    *pubsub.Topic
-	proofTopic *pubsub.Topic
+	blockTopic  *pubsub.Topic // Deprecated, replaced by header + shards
+	headerTopic *pubsub.Topic
+	shardTopics map[int]*pubsub.Topic
+	txTopic     *pubsub.Topic
+	proofTopic  *pubsub.Topic
 
-	blockSub *pubsub.Subscription
-	txSub    *pubsub.Subscription
-	proofSub *pubsub.Subscription
+	headerSub *pubsub.Subscription
+	shardSubs map[int]*pubsub.Subscription
+	txSub     *pubsub.Subscription
+	proofSub  *pubsub.Subscription
+
+	shardConfig config.ShardConfig
 
 	// Local Mempool
 	Mempool []types.Transaction
 	mu      sync.Mutex
 }
 
+func (n *GossipSubNode) GetShardConfig() config.ShardConfig {
+	return n.shardConfig
+}
+
+func (n *GossipSubNode) GetHost() host.Host {
+	return n.host
+}
+
 // NewGossipSubNode creates a new LibP2P node with GossipSub
-func NewGossipSubNode(ctx context.Context, port int) (*GossipSubNode, error) {
+func NewGossipSubNode(ctx context.Context, port int, shardConfig config.ShardConfig) (*GossipSubNode, error) {
 	// Create LibP2P host
 	h, err := libp2p.New(
 		libp2p.ListenAddrStrings(
@@ -60,9 +76,12 @@ func NewGossipSubNode(ctx context.Context, port int) (*GossipSubNode, error) {
 	}
 
 	node := &GossipSubNode{
-		host:   h,
-		pubsub: ps,
-		ctx:    ctx,
+		host:        h,
+		pubsub:      ps,
+		ctx:         ctx,
+		shardConfig: shardConfig,
+		shardTopics: make(map[int]*pubsub.Topic),
+		shardSubs:   make(map[int]*pubsub.Subscription),
 	}
 
 	// Join topics
@@ -84,14 +103,42 @@ func NewGossipSubNode(ctx context.Context, port int) (*GossipSubNode, error) {
 func (n *GossipSubNode) joinTopics() error {
 	var err error
 
-	// Join blocks topic
-	n.blockTopic, err = n.pubsub.Join(TopicBlocks)
+	// 1. Join HEADER Topic (ALL Nodes)
+	n.headerTopic, err = n.pubsub.Join(TopicHeader)
 	if err != nil {
 		return err
 	}
-	n.blockSub, err = n.blockTopic.Subscribe()
+	n.headerSub, err = n.headerTopic.Subscribe()
 	if err != nil {
 		return err
+	}
+
+	// 2. Join SHARD Topics (Selective)
+	// If FullNode, join ALL. If ShardNode, join specific.
+	shardsToJoin := []int{}
+	if n.shardConfig.Role == "ShardNode" {
+		shardsToJoin = n.shardConfig.ShardIDs
+		fmt.Printf("🔍 ShardNode Mode: Subscribing to Shards %v\n", shardsToJoin)
+	} else {
+		// Full Node: Join 0-9
+		for i := 0; i < 10; i++ {
+			shardsToJoin = append(shardsToJoin, i)
+		}
+		fmt.Printf("💪 FullNode Mode: Subscribing to ALL Shards (0-9)\n")
+	}
+
+	for _, id := range shardsToJoin {
+		topicName := fmt.Sprintf("%s%d/1.0.0", TopicShardPrefix, id)
+		t, err := n.pubsub.Join(topicName)
+		if err != nil {
+			return err
+		}
+		sub, err := t.Subscribe()
+		if err != nil {
+			return err
+		}
+		n.shardTopics[id] = t
+		n.shardSubs[id] = sub
 	}
 
 	// Join transactions topic
@@ -138,9 +185,30 @@ func (n *GossipSubNode) ConnectToPeer(peerAddr string) error {
 	return nil
 }
 
-// PublishBlock publishes a block to the network
-func (n *GossipSubNode) PublishBlock(blockData []byte) error {
-	return n.blockTopic.Publish(n.ctx, blockData)
+// PublishBlock publishes a block to the network (SPLIT into Header + Shards)
+func (n *GossipSubNode) PublishBlock(block types.Block) error {
+	// 1. Publish Header
+	headerData, _ := json.Marshal(block.Header)
+	if err := n.headerTopic.Publish(n.ctx, headerData); err != nil {
+		return err
+	}
+
+	// 2. Publish Shards
+	// Note: We need to publish ALL shards if we produced the block.
+	// But we only have topic handles for shards we are subscribed to.
+	// Miner MUST be a FullNode (subscribe to all) OR we need to join temporarily.
+	// Assumption: Miner is FullNode.
+
+	for i, shard := range block.Shards {
+		// Only publish if we have reference to the topic
+		if topic, ok := n.shardTopics[i]; ok {
+			shardData, _ := json.Marshal(shard)
+			if err := topic.Publish(n.ctx, shardData); err != nil {
+				fmt.Printf("Error publishing shard %d: %v\n", i, err)
+			}
+		}
+	}
+	return nil
 }
 
 // PublishTransaction publishes a transaction to the network
@@ -154,16 +222,31 @@ func (n *GossipSubNode) PublishProof(proofData []byte) error {
 }
 
 // ListenForBlocks starts listening for blocks
-func (n *GossipSubNode) ListenForBlocks(handler func([]byte)) {
+// ListenForHeaders starts listening for block headers
+func (n *GossipSubNode) ListenForHeaders(handler func([]byte)) {
 	go func() {
 		for {
-			msg, err := n.blockSub.Next(n.ctx)
+			msg, err := n.headerSub.Next(n.ctx)
 			if err != nil {
-				fmt.Printf("Error reading block message: %v\n", err)
 				continue
 			}
+			handler(msg.Data)
+		}
+	}()
+}
 
-			// Process message
+// ListenForShards starts listening for specific shard data
+func (n *GossipSubNode) ListenForShards(shardID int, handler func([]byte)) {
+	sub, ok := n.shardSubs[shardID]
+	if !ok {
+		return
+	}
+	go func() {
+		for {
+			msg, err := sub.Next(n.ctx)
+			if err != nil {
+				continue
+			}
 			handler(msg.Data)
 		}
 	}()
