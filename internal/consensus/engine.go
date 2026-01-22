@@ -1,8 +1,8 @@
 package consensus
 
 import (
+	"crypto/ed25519"
 	"crypto/sha256"
-	"encoding/binary"
 	"fmt"
 	"math/big"
 	"sync"
@@ -13,9 +13,10 @@ import (
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/utils"
 )
 
-// MineBlock runs the Proof of Repeated Sorting (PoRS)
-// SECURITY: Algorithm selection happens AFTER block hash is found to prevent prediction attacks
-func MineBlock(txs []types.Transaction, prevBlock types.BlockHeader, difficulty uint64, stopChan chan struct{}) (*types.Block, error) {
+// MineBlock runs the Proof of Repeated Sorting (PoSSR)
+// SECURITY: Now uses true VRF (Signature of PoW Hash) to prevent entropy prediction
+func MineBlock(txs []types.Transaction, prevBlock types.BlockHeader, difficulty uint64, stopChan chan struct{},
+	minerPubKey [32]byte, minerPrivKey ed25519.PrivateKey) (*types.Block, error) {
 	// 1. Prepare base data
 	var nonce uint64 = 0
 	// target := big.NewInt(0).SetUint64(difficulty)
@@ -62,19 +63,16 @@ func MineBlock(txs []types.Transaction, prevBlock types.BlockHeader, difficulty 
 			// PoW SUCCESS! Block hash meets difficulty target
 			header.Hash = blockHash // Store the PoW hash immediately
 
-			// 5. SECURITY: Derive VRF seed from FOUND hash (unpredictable!)
-			// seed = SHA256(BlockHash + Timestamp)
-			// This prevents attackers from knowing algorithm before mining
-			hasher := sha256.New()
-			hasher.Write(blockHash[:])
-			binary.Write(hasher, binary.BigEndian, header.Timestamp)
-			vrfSeed := hasher.Sum(nil)
-			var seed [32]byte
-			copy(seed[:], vrfSeed)
+			// 5. SECURITY: Derive VRF seed from Miner's Signature of the PoW hash
+			// signature = Sign(PrivKey, BlockHash)
+			// Seed = SHA256(signature)
+			// This is a true VRF: unpredictable by others, verifiable by all.
+			signature := ed25519.Sign(minerPrivKey, blockHash[:])
+			seed := sha256.Sum256(signature)
 
-			// 6. NOW select algorithm (post-mining, unpredictable)
+			// 6. NOW select algorithm (post-mining, determined by signature entropy)
 			algo := utils.SelectAlgorithm(seed)
-			fmt.Printf("  [VRF] Post-Mining Algorithm: %s (Seed: %x...)\n", algo, seed[:4])
+			fmt.Printf("  [VRF] Signed Block Seed: %x... (Algo: %s)\n", seed[:4], algo)
 
 			// 7. Shard the mempool
 			shardingMgr := mempool.NewShardingManager()
@@ -117,9 +115,10 @@ func MineBlock(txs []types.Transaction, prevBlock types.BlockHeader, difficulty 
 			}
 			globalMerkleRoot := utils.CalculateMerkleRoot(allRoots)
 
-			// 10. Update header with VRF seed and Merkle root
-			// NOTE: Do NOT recalculate hash! PoW hash (line 53) is the final hash
+			// 10. Update header with VRF data
 			header.VRFSeed = seed
+			header.MinerPubKey = minerPubKey
+			copy(header.MinerSignature[:], signature)
 			header.MerkleRoot = globalMerkleRoot
 			header.ShardRoots = shardRoots // Distributed Validation Support
 			// Hash was already set at line 53 during PoW

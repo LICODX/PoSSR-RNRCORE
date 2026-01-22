@@ -17,17 +17,19 @@ type Transaction struct {
 
 // Block Header (Ringan, disimpan selamanya)
 type BlockHeader struct {
-	Version       uint32
-	PrevBlockHash [32]byte
-	MerkleRoot    [32]byte // Root dari gabungan 10 Shard Roots
-	Timestamp     int64
-	Height        uint64
-	Nonce         uint64       // Mining counter
-	Difficulty    uint64       // Target for the hash
-	Hash          [32]byte     // Block Hash
-	WinningNodes  [10][32]byte // PubKey 10 Pemenang
-	ShardRoots    [10][32]byte // Merkle Roots of each Shard (New for Distributed Validation)
-	VRFSeed       [32]byte     // Seed untuk blok berikutnya
+	Version        uint32
+	PrevBlockHash  [32]byte
+	MerkleRoot     [32]byte // Root dari gabungan 10 Shard Roots
+	Timestamp      int64
+	Height         uint64
+	Nonce          uint64       // Mining counter
+	Difficulty     uint64       // Target for the hash
+	Hash           [32]byte     // Block Hash
+	WinningNodes   [10][32]byte // PubKey 10 Pemenang
+	ShardRoots     [10][32]byte // Merkle Roots of each Shard (New for Distributed Validation)
+	VRFSeed        [32]byte     // Seed untuk blok berikutnya
+	MinerPubKey    [32]byte     // Public key of the miner (VRF identity)
+	MinerSignature [64]byte     // Validator's signature of PoW hash (VRF Proof)
 }
 
 // ShardData mewakili kontribusi 1 node

@@ -27,11 +27,8 @@ func QuickSort(data []SortableTransaction) []SortableTransaction {
 	if len(data) <= 1 {
 		return data
 	}
-
-	result := make([]SortableTransaction, len(data))
-	copy(result, data)
-	quickSortRecursive(result, 0, len(result)-1)
-	return result
+	quickSortRecursive(data, 0, len(data)-1)
+	return data
 }
 
 func quickSortRecursive(arr []SortableTransaction, low, high int) {
@@ -113,23 +110,23 @@ func merge(left, right []SortableTransaction) []SortableTransaction {
 // Complexity: O(n log n) guaranteed, Space: O(1)
 // In-place sorting, not stable
 func HeapSort(data []SortableTransaction) []SortableTransaction {
-	result := make([]SortableTransaction, len(data))
-	copy(result, data)
-
-	n := len(result)
+	n := len(data)
+	if n <= 1 {
+		return data
+	}
 
 	// Build max heap
 	for i := n/2 - 1; i >= 0; i-- {
-		heapify(result, n, i)
+		heapify(data, n, i)
 	}
 
 	// Extract elements from heap one by one
 	for i := n - 1; i > 0; i-- {
-		result[0], result[i] = result[i], result[0]
-		heapify(result, i, 0)
+		data[0], data[i] = data[i], data[0]
+		heapify(data, i, 0)
 	}
 
-	return result
+	return data
 }
 
 func heapify(arr []SortableTransaction, n, i int) {
@@ -314,13 +311,12 @@ func mergeRuns(arr []SortableTransaction, left, mid, right int) {
 // Complexity: O(n log n) guaranteed, Space: O(log n)
 // Starts with quicksort, switches to heapsort if depth limit exceeded
 func IntroSort(data []SortableTransaction) []SortableTransaction {
-	result := make([]SortableTransaction, len(data))
-	copy(result, data)
-
-	maxDepth := 2 * logBase2(len(result))
-	introSortRecursive(result, 0, len(result)-1, maxDepth)
-
-	return result
+	if len(data) <= 1 {
+		return data
+	}
+	maxDepth := 2 * logBase2(len(data))
+	introSortRecursive(data, 0, len(data)-1, maxDepth)
+	return data
 }
 
 func introSortRecursive(arr []SortableTransaction, low, high, depthLimit int) {
@@ -400,21 +396,21 @@ func logBase2(n int) int {
 // Complexity: Depends on gap sequence, typically O(n^1.5) or O(n log^2 n)
 // Good for medium sized arrays, low memory overhead
 func ShellSort(arr []SortableTransaction) []SortableTransaction {
-	// Clone array to avoid mutation
-	sorted := make([]SortableTransaction, len(arr))
-	copy(sorted, arr)
-	n := len(sorted)
+	n := len(arr)
+	if n <= 1 {
+		return arr
+	}
 
 	// Start with a large gap, then reduce the gap
 	for gap := n / 2; gap > 0; gap /= 2 {
 		for i := gap; i < n; i++ {
-			temp := sorted[i]
+			temp := arr[i]
 			j := i
-			for ; j >= gap && sorted[j-gap].Key > temp.Key; j -= gap {
-				sorted[j] = sorted[j-gap]
+			for ; j >= gap && arr[j-gap].Key > temp.Key; j -= gap {
+				arr[j] = arr[j-gap]
 			}
-			sorted[j] = temp
+			arr[j] = temp
 		}
 	}
-	return sorted
+	return arr
 }

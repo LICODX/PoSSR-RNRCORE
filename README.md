@@ -1,26 +1,33 @@
-# 🌌 PoSSR: Proof of Sequential Sorting Race - RNR Core
+# PoSSR-RNRCORE: Proof of Repeated Sorting & Sharding (Alpha)
 
-> **The First Deterministic Consensus Blockchain Based on Sorting Algorithms**
+> **⚠️ WARNING: DEVELOPMENT PREVIEW (DEVNET)**
+> This project is currently in **ALPHA STAGE**. It is NOT ready for production use with real assets.
+> The "Mainnet" configuration currently refers to a **local development network** (Seed Nodes = Localhost).
+> Use at your own risk. Code audits are pending.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/LICODX/PoSSR-RNRCORE)](https://goreportcard.com/report/github.com/LICODX/PoSSR-RNRCORE)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-windows%20%7C%20linux-lightgrey)]()
+**PoSSR (Proof of Shared Sorting Rarity)** is an experimental Layer-1 Blockchain Consensus mechanism that combines:
+1.  **Proof-of-Work (PoW)** as a Sybil resistance mechanism (Spam Prevention).
+2.  **Verifiable Random Function (VRF)** based on **Miner Signatures** for unpredictable entropy.
+3.  **Proof-of-Sorting (PoS)** for deterministic winner selection using 7 sorting algorithms.
+4.  **True Sharding** via P2P Topic Splitting for horizontal scalability.
 
----
+## 🚀 Corrected Status (Jan 2026)
 
-## 🚀 Overview
+| Feature | Status | Notes |
+|---------|--------|-------|
+| **Consensus** | ✅ Active | Hybrid PoW + Signed VRF + Sorting |
+| **Throughput** | ⚠️ Alpha | Target: 100k TPS (Simulated), Real: Untested on Public Net |
+| **Sharding** | ✅ Functional | 10 Shards w/ Distributed P2P Topics |
+| **Security** | ⚠️ Audit Pending | Internal "Self-Audit" only. **NOT AUDITED BY 3RD PARTY** |
+| **Network** | 🚧 Devnet | Running on Local/Private IP. Public Testnet: TBA |
+| **Block Size** | ⚠️ Experimental | 1GB Limit (Requires High Bandwidth) |
 
-**RNR Core** is a next-generation Layer-1 blockchain implementing the novel **Proof of Sequential Sorting Race (PoSSR)** consensus. Instead of energy-wasteful hashing (PoW) or stake-centralized validation (PoS), PoSSR uses cryptographic randomness (VRF) to generate strict sorting challenges. Nodes race to sort data using optimal algorithms (QuickSort, MergeSort, RadixSort, etc.), rewarding computational efficiency and algorithmic skill.
+## 🛠️ Technical Highlights (Latest Updates)
 
-### ✨ Key Features
-
-- **Consensus**: Proof of Sequential Sorting Race (PoSSR)
-- **Engine**: 100% Go (Golang)
-- **Smart Contracts**: WASM Runtime (Rust/C++) with comprehensive security
-- **Scalability**: Parallel Sharding (256 Shards)
-- **Database**: BadgerDB (High Performance KV Store)
-- **Network**: LibP2P with GossipSub
+-   **Signed VRF**: Randomness seeded by digital signatures (`Sign(PrivKey, PoWHash)`), verifiable and unpredictable.
+-   **In-Place Sorting**: Zero-Copy memory optimization for sorting algorithms to reduce GC pressure.
+-   **O(N) Validation**: Linear scan validation (no re-sorting) for maximum verification speed.
+-   **Gas Metering**: Computational cost tracking for Smart Contract execution.
 
 ---
 

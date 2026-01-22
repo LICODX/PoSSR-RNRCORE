@@ -352,10 +352,10 @@ func main() {
 		// Prepend Coinbase to transactions
 		minableTxs := append([]types.Transaction{coinbaseTx}, txs...)
 
-		fmt.Printf("[MINING] Block #%d [Diff: %d] | TXs: %d (inc. Coinbase) | Reward -> %s\n",
-			lastHeader.Height+1, difficulty, len(minableTxs), nodeWallet.Address[:20]+"...")
+		var minerPubKey [32]byte
+		copy(minerPubKey[:], nodeWallet.PublicKey)
 
-		newBlock, err := consensus.MineBlock(minableTxs, lastHeader, difficulty, stopMining)
+		newBlock, err := consensus.MineBlock(minableTxs, lastHeader, difficulty, stopMining, minerPubKey, nodeWallet.PrivateKey)
 
 		if err != nil {
 			if err.Error() == "mining interrupted" {

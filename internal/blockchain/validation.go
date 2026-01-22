@@ -1,8 +1,10 @@
 package blockchain
 
 import (
+	"crypto/ed25519"
 	"crypto/sha256"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
@@ -99,6 +101,26 @@ func ValidateBlock(block types.Block, prevHeader types.BlockHeader, shardCfg con
 		if block.Header.PrevBlockHash != expectedPrevHash {
 			return fmt.Errorf("invalid previous block hash")
 		}
+	}
+
+	// 2a. Validate PoW (Difficuly Target)
+	// Crucial after criticism about "fake PoW"
+	powHash := types.HashBlockHeaderForPoW(block.Header)
+	hashInt := new(big.Int).SetBytes(powHash[:])
+	maxVal := new(big.Int).Exp(big.NewInt(2), big.NewInt(256), nil)
+	targetVal := new(big.Int).Div(maxVal, big.NewInt(int64(block.Header.Difficulty)))
+	if hashInt.Cmp(targetVal) != -1 {
+		return fmt.Errorf("block hash does not meet difficulty target")
+	}
+
+	// 2b. Validate VRF (Miner Signature & Seed Derivation)
+	// Seed MUST be H(Signature(Miner, PoWHash))
+	if !ed25519.Verify(ed25519.PublicKey(block.Header.MinerPubKey[:]), powHash[:], block.Header.MinerSignature[:]) {
+		return fmt.Errorf("invalid miner signature (VRF proof failed)")
+	}
+	expectedSeed := sha256.Sum256(block.Header.MinerSignature[:])
+	if expectedSeed != block.Header.VRFSeed {
+		return fmt.Errorf("VRF seed mismatch: does not match signature entropy")
 	}
 
 	// 3. Validate block size

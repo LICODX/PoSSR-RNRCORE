@@ -37,6 +37,8 @@ func SerializeBlockHeader(h BlockHeader) []byte {
 		buf.Write(root[:])
 	}
 	buf.Write(h.VRFSeed[:])
+	buf.Write(h.MinerPubKey[:])
+	buf.Write(h.MinerSignature[:])
 	return buf.Bytes()
 }
 

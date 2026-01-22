@@ -2,6 +2,7 @@ package state
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
@@ -18,6 +19,24 @@ type ContractState struct {
 
 	mu sync.RWMutex
 	db *leveldb.DB
+}
+
+// GasMeter tracks computational expenditure during contract execution
+type GasMeter struct {
+	Limit uint64
+	Used  uint64
+}
+
+func NewGasMeter(limit uint64) *GasMeter {
+	return &GasMeter{Limit: limit, Used: 0}
+}
+
+func (gm *GasMeter) Consume(amount uint64) error {
+	if gm.Used+amount > gm.Limit {
+		return fmt.Errorf("out of gas: limit %d, used %d, requested %d", gm.Limit, gm.Used, amount)
+	}
+	gm.Used += amount
+	return nil
 }
 
 // NewContractState creates contract state manager
@@ -172,4 +191,27 @@ func (cs *ContractState) ListContracts() []*types.Contract {
 		contracts = append(contracts, contract)
 	}
 	return contracts
+}
+
+// ExecuteContract simulates contract execution with gas metering
+func (cs *ContractState) ExecuteContract(address [32]byte, payload []byte, gasLimit uint64) (uint64, error) {
+	meter := NewGasMeter(gasLimit)
+
+	// Sub-PHASE 1: Load Contract
+	_, err := cs.GetContract(address)
+	if err != nil {
+		return 0, err
+	}
+	meter.Consume(100) // Base execution cost
+
+	// Sub-PHASE 2: Process Payload (Logic depends on Contract Type)
+	// Example: Token Transfer within contract
+	// For now, we simulate complexity based on payload length
+	complexity := uint64(len(payload)) * 10
+	if err := meter.Consume(complexity); err != nil {
+		return meter.Used, err
+	}
+
+	// Persist changes if successful...
+	return meter.Used, nil
 }
