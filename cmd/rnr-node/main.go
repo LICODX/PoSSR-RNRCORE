@@ -342,14 +342,26 @@ func main() {
 		copy(minerAddress[:], nodeWallet.PublicKey)
 
 		// Calculate block reward using economics module (decaying over time)
-		blockReward := economics.GetBlockReward(lastHeader.Height + 1)
+		baseReward := economics.GetBlockReward(lastHeader.Height + 1)
+
+		// TODO: In full implementation, this would get validator addresses from BFT consensus
+		// For now, use simplified model: miner gets reward for shards they processed
+		// In distributed network: assign shards to multiple validators, reward proportionally
+
+		// Example: If network has 4 validators, shards are distributed as:
+		// Validator 0: Shards [0, 4, 8]     → 3 shards → 30% of reward
+		// Validator 1: Shards [1, 5, 9]     → 3 shards → 30% of reward
+		// Validator 2: Shards [2, 6]        → 2 shards → 20% of reward
+		// Validator 3: Shards [3, 7]        → 2 shards → 20% of reward
+		//
+		// Current simplified mode: Single miner processes all 10 shards → 100% reward
 
 		coinbaseTx := types.Transaction{
 			ID:        [32]byte{1, 1, 1, 1, byte(lastHeader.Height)},
 			Sender:    [32]byte{}, // System
 			Receiver:  minerAddress,
-			Amount:    uint64(blockReward),
-			Nonce:     0, // System TX
+			Amount:    uint64(baseReward), // Full reward (all shards processed)
+			Nonce:     0,                  // System TX
 			Signature: [64]byte{},
 		}
 
