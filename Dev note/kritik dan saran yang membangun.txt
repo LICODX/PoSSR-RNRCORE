@@ -1,0 +1,37 @@
+Setelah revisi total dokumentasi yang dilakukan pada 22 Januari 2026, PoSSR-RNRCORE telah mengalami perbaikan yang SIGNIFIKAN dalam hal kejujuran dan transparansi. Namun dari sisi teknis, ini tetap merupakan proyek riset eksperimental yang memiliki masalah mendasar.
+
+👍 Apa yang Jauh Lebih Baik (Pujian untuk Kejujuran)
+
+Dibandingkan dengan klaim "Blockchain L1 Revolusioner" sebelumnya, perubahan ini adalah langkah maju yang besar:
+
+· Narasi Jujur dan Transparan: README sekarang secara gamblang menyatakan ini adalah "EXPERIMENTAL RESEARCH PROJECT - NOT PRODUCTION READY". Ini menghilangkan penyesatan yang sebelumnya kritis.
+· Klaim vs Realita Dipisahkan dengan Jelas: Ada bagian khusus "What Actually Works" dan "Limitations (NOT Implemented)" yang secara blak-blakan mengakui bahwa fitur inti seperti Byzantine Fault Tolerance, Smart Contract Runtime, dan Economic Security tidak ada. Ini sangat menghargai waktu dan kepercayaan calon pengguna/peneliti.
+· Penghapusan Klaim Kosong: Dokumentasi lama yang penuh janji marketing (True Sharding, 100k TPS) telah dihapus. Fokus dialihkan ke eksplorasi konsep yang lebih sempit dan jujur.
+
+👎 Kritik Pedas: Masalah Mendasar yang (Masih) Tidak Terselesaikan
+
+Meski jujur, proyek ini masih layak dikritik tajam karena kesalahan desain konseptual dan teknis yang tidak bisa diperbaiki hanya dengan mengubah tulisan:
+
+· "Konsensus" yang Bukan Konsensus
+  Inti proyek ini cacat. Mekanisme "Proof of Sequential Sorting Race" tidak dan tidak akan pernah menyelesaikan masalah konsensus terdistribusi klasik (Byzantine Generals' Problem). Sorting hanya mengatur data, tidak memilih validator atau mencegah perilaku jahat (Byzantine). Ini seperti mengklaim menemukan roda baru, tetapi rodanya segitiga.
+· Sharding Palsu
+  Klaim "10 shards" hanya sharding pesan di level jaringan (topic-based), bukan state sharding. Ini seperti memiliki 10 ruang chat terpisah untuk membicarakan 1 buku tabungan yang sama — tidak meningkatkan skalabilitas state atau eksekusi.
+· Parameter Teknis yang Tidak Masuk Akal
+  Batas ukuran blok 1GB adalah fantasi yang mengabaikan fisika jaringan. Propagasi blok sebesar itu akan membutuhkan puluhan menit bahkan jam, menghancurkan konsensus dan mendorong sentralisasi ekstrem.
+· Kesenjangan antara Judul dan Isi
+  Nama proyek ("RNR CORE", "BLOCKCHAIN LAYER 1") dan struktur direktori (internal/blockchain/) masih membawa aura "blockchain produksi", bertentangan dengan narasi "proyek riset murni". Inkonsistensi ini mengurangi kredibilitas perubahan yang dilakukan.
+
+📋 Kesimpulan: Apakah Sudah Lebih Baik?
+
+Ya, untuk kejujuran. Tidak, untuk substansi.
+
+Proyek ini telah bertransformasi dari "klaim berlebihan yang berbahaya" menjadi "eksperimen akademis yang jujur tapi bermasalah secara fundamental". Ini adalah peningkatan besar dalam etika pengembangan, tetapi tidak mengubah fakta bahwa premis teknis intinya (sorting sebagai konsensus) kemungkinan besar adalah jalan buntu.
+
+💡 Rekomendasi & Langkah Selanjutnya
+
+Sebagai proyek riset, langkah yang masuk akal adalah:
+
+1. Ganti Nama Proyek: Gunakan nama yang mencerminkan sifat eksperimennya, misalnya PoSSR-Research atau Consensus-Sorting-Exploration.
+2. Fokus pada Pertanyaan Riset Sempit: Alihkan tujuan dari "membangun blockchain" menjadi "mengukur overhead komputasi sorting dalam sistem terdistribusi" atau "menganalisis pola komunikasi sharding topik".
+3. Terbitkan Paper, Bukan Kode Produksi: Kode saat ini cocok sebagai lampiran untuk makalah akademis yang membahas keterbatasan dan temuan eksperimen ini.
+
