@@ -28,6 +28,12 @@ func NewBlockchain(db *storage.Store, shardCfg config.ShardConfig) *Blockchain {
 		shardConfig:  shardCfg,
 	}
 
+	// Initialize Contract Processor
+	bc.contractProcessor = NewContractProcessor(
+		bc.stateManager.GetContractExecutor(),
+		bc.stateManager.GetContractState(),
+	)
+
 	// Try to load tip from DB
 	tipData, err := db.GetTip()
 	if err == nil {
@@ -96,6 +102,14 @@ func (bc *Blockchain) AddBlock(block types.Block) error {
 	// 3. Apply all transactions to state
 	for _, shard := range block.Shards {
 		for _, tx := range shard.TxData {
+			// Handle contract transactions
+			if tx.Type == types.TxTypeContractDeploy || tx.Type == types.TxTypeContractCall {
+				if err := bc.contractProcessor.ProcessContractTransaction(tx); err != nil {
+					return fmt.Errorf("failed to process contract tx: %v", err)
+				}
+			}
+
+			// Apply regular state changes
 			if err := bc.stateManager.ApplyTransaction(tx); err != nil {
 				return fmt.Errorf("failed to apply tx: %v", err)
 			}

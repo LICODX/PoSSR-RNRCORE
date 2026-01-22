@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
+	"github.com/LICODX/PoSSR-RNRCORE/pkg/vm"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -15,18 +16,30 @@ type Account struct {
 	Nonce   uint64
 }
 
-// Manager manages account state
+// Manager manages account state, contracts, and tokens
 type Manager struct {
 	db    *leveldb.DB
 	cache map[[32]byte]*Account
 	mu    sync.RWMutex
+
+	// Sub-managers
+	contractState *ContractState
+	tokenState    *TokenState
+	executor      *vm.ContractExecutor
 }
 
 // NewManager creates a new state manager
 func NewManager(db *leveldb.DB) *Manager {
+	contractState := NewContractState(db)
+	tokenState := NewTokenState(db)
+	executor := vm.NewContractExecutor(contractState)
+
 	return &Manager{
-		db:    db,
-		cache: make(map[[32]byte]*Account),
+		db:            db,
+		cache:         make(map[[32]byte]*Account),
+		contractState: contractState,
+		tokenState:    tokenState,
+		executor:      executor,
 	}
 }
 
@@ -125,4 +138,19 @@ func (m *Manager) ApplyTransaction(tx types.Transaction) error {
 	}
 
 	return nil
+}
+
+// GetContractState returns the contract state manager
+func (m *Manager) GetContractState() *ContractState {
+	return m.contractState
+}
+
+// GetTokenState returns the token state manager
+func (m *Manager) GetTokenState() *TokenState {
+	return m.tokenState
+}
+
+// GetContractExecutor returns the contract executor
+func (m *Manager) GetContractExecutor() *vm.ContractExecutor {
+	return m.executor
 }

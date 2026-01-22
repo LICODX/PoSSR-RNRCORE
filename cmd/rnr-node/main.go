@@ -15,6 +15,7 @@ import (
 	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/consensus"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/dashboard"
+	"github.com/LICODX/PoSSR-RNRCORE/internal/economics"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/params"
 
 	// "github.com/LICODX/PoSSR-RNRCORE/internal/dashboard"
@@ -340,11 +341,14 @@ func main() {
 		var minerAddress [32]byte
 		copy(minerAddress[:], nodeWallet.PublicKey)
 
+		// Calculate block reward using economics module (decaying over time)
+		blockReward := economics.GetBlockReward(lastHeader.Height + 1)
+
 		coinbaseTx := types.Transaction{
 			ID:        [32]byte{1, 1, 1, 1, byte(lastHeader.Height)},
 			Sender:    [32]byte{}, // System
 			Receiver:  minerAddress,
-			Amount:    uint64(params.InitialReward),
+			Amount:    uint64(blockReward),
 			Nonce:     0, // System TX
 			Signature: [64]byte{},
 		}
