@@ -1,99 +1,155 @@
-# PoSSR-RNRCORE: Proof of Repeated Sorting & Sharding (Alpha)
+# PoSSR-RNRCORE (Proof of Sequential Sorting Race)
 
-> **⚠️ WARNING: DEVELOPMENT PREVIEW (DEVNET)**
-> This project is currently in **ALPHA STAGE**. It is NOT ready for production use with real assets.
-> The "Mainnet" configuration currently refers to a **local development network** (Seed Nodes = Localhost).
-> Use at your own risk. Code audits are pending.
+> **⚠️ EXPERIMENTAL RESEARCH PROJECT - NOT PRODUCTION READY**
+> 
+> This is an **experimental blockchain research project** exploring alternative consensus mechanisms.
+> Currently in **ALPHA** stage with **LOCAL DEVELOPMENT ONLY**.
+> 
+> **DO NOT USE WITH REAL ASSETS OR IN PRODUCTION ENVIRONMENTS.**
 
-**PoSSR (Proof of Shared Sorting Rarity)** is an experimental Layer-1 Blockchain Consensus mechanism that combines:
-1.  **Proof-of-Work (PoW)** as a Sybil resistance mechanism (Spam Prevention).
-2.  **Verifiable Random Function (VRF)** based on **Miner Signatures** for unpredictable entropy.
-3.  **Proof-of-Sorting (PoS)** for deterministic winner selection using 7 sorting algorithms.
-4.  **True Sharding** via P2P Topic Splitting for horizontal scalability.
+## What This Project Actually Is
 
-## 🚀 Corrected Status (Jan 2026)
+PoSSR-RNRCORE is a research implementation of a hybrid consensus mechanism that combines:
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Consensus** | ✅ Active | Hybrid PoW + Signed VRF + Sorting |
-| **Throughput** | ⚠️ Alpha | Target: 100k TPS (Simulated), Real: Untested on Public Net |
-| **Sharding** | ✅ Functional | 10 Shards w/ Distributed P2P Topics |
-| **Security** | ⚠️ Audit Pending | Internal "Self-Audit" only. **NOT AUDITED BY 3RD PARTY** |
-| **Network** | 🚧 Devnet | Running on Local/Private IP. Public Testnet: TBA |
-| **Block Size** | ⚠️ Experimental | 1GB Limit (Requires High Bandwidth) |
+1. **Proof-of-Work (PoW)** - Basic hash-based mining for spam prevention
+2. **VRF-like Randomness** - Using miner signatures on PoW hash for unpredictable entropy
+3. **Sorting Verification** - 7 sorting algorithms (QuickSort, MergeSort, HeapSort, RadixSort, TimSort, IntroSort, ShellSort)
 
-## 🛠️ Technical Highlights (Latest Updates)
+The goal is to explore whether sorting can be used as part of blockchain consensus, rather than being a production-ready blockchain.
 
--   **Signed VRF**: Randomness seeded by digital signatures (`Sign(PrivKey, PoWHash)`), verifiable and unpredictable.
--   **In-Place Sorting**: Zero-Copy memory optimization for sorting algorithms to reduce GC pressure.
--   **O(N) Validation**: Linear scan validation (no re-sorting) for maximum verification speed.
--   **Gas Metering**: Computational cost tracking for Smart Contract execution.
+## What Actually Works
 
----
+✅ **Core Features (Implemented & Tested)**:
+- Basic PoW mining with difficulty targets
+- Ed25519 signature-based VRF seed generation
+- Parallel shard processing (10 shards using goroutines)
+- In-place sorting algorithms (memory optimized)
+- O(N) linear validation (no re-sorting)
+- LibP2P GossipSub networking with topic-based sharding
+- BadgerDB for state storage
+- Basic transaction signing and verification
+- Simple mempool management
 
-## 📚 Documentation
+⚠️ **Limitations (NOT Implemented)**:
+- **No Byzantine Fault Tolerance** - This is NOT a proven-secure consensus
+- **No Public Network** - "Mainnet" config points to localhost only
+- **No Smart Contract Runtime** - WASM claims are not implemented
+- **No Cross-Shard Communication** - Sharding is message-level only, not state-level
+- **No Economic Security** - No incentive mechanism or game theory
+- **No External Audit** - Code has never been professionally audited
+- **No Production Deployment** - Never run in adversarial environment
 
-Detailed documentation has been consolidated into the [`docs/`](./docs/) directory.
+## Quick Start (Local Development Only)
 
-### 🌟 Start Here
-- **[RNR Revolution (Whitepaper)](./docs/RNR_Revolution_Whitepaper.md)**: 📄 The complete explanation of the RNR revolution.
-- **[Real Network Setup](./docs/REAL_NETWORK_SETUP.md)**: 🌐 Connect to the Mainnet Genesis Node.
-- **[Adversarial Simulation](./simulation/adversarial_net_main.go)**: ⚔️ Code for 20-node attack simulation.
+### Prerequisites
+- Go 1.21+
+- ~4GB RAM
+- Windows/Linux/macOS
 
-### 🛠️ Developer Guides
-- **[Technical Analysis](./docs/Analisis_Teknis.md)**: Deep dive into current metrics.
-- **[Installation & Mining](./docs/MINING.md)**: How to set up a node.
-- **[Smart Contracts](./docs/SMART_CONTRACTS.md)**: Writing WASM contracts.
-- **[Dashboard Manual](./docs/DASHBOARD_V2.2.md)**: Using the new Explorer & Wallet.
-
----
-
-## ⚡ Quick Start: Join the Mainnet
-
-### 1. Connect to Genesis Node
-To join the live network and sync with the Genesis Node:
+### Build and Run
 
 ```bash
-# 1. Build the Node
-go build -o rnr-node.exe ./cmd/rnr-node
-
-# 2. Run (Auto-connects to seed nodes in config/mainnet.yaml)
-./rnr-node.exe
-```
-
-### 2. Run Simulations (Standalone)
-You can run adversarial simulations without connecting to the network to verify security:
-
-```bash
-# Run 20-Node Adversarial Simulation (13 Malicious vs 7 Honest)
-go run simulation/adversarial_net_main.go
-
-# Run Internal Security Audit (Replay/DoS Tests)
-go run simulation/internal_audit_main.go
-```
-
-### 3. Build from Source
-```bash
+# Clone repository
 git clone https://github.com/LICODX/PoSSR-RNRCORE.git
 cd PoSSR-RNRCORE
-go build -o rnr-node.exe ./cmd/rnr-node
+
+# Build
+go build -o rnr-node ./cmd/rnr-node
+
+# Run (creates local test network)
+./rnr-node
 ```
 
+**Note**: This will start a single node that mines blocks locally. It is NOT connecting to any public network.
+
+### Run Simulations
+
+```bash
+# Test with multiple local nodes (stress test)
+go run simulation/mainnet_stress_test_main.go
+
+# Test distributed sharding logic
+go run simulation/distributed_sharding_main.go
+```
+
+## Architecture (What's Actually Implemented)
+
+### Consensus Flow
+1. **Mining Phase**: Node runs PoW to find hash below difficulty target
+2. **Signature Phase**: Miner signs PoW hash with private key (creates VRF seed)
+3. **Sorting Phase**: Mempool is sharded into 10 parts, sorted in parallel using randomly selected algorithm
+4. **Validation Phase**: Other nodes verify PoW, signature, and sorting order in O(N) time
+
+### File Structure
+```
+PoSSR-RNRCORE/
+├── cmd/rnr-node/           # Node binary entry point
+├── internal/
+│   ├── blockchain/         # Block validation, chain management
+│   ├── consensus/          # PoW + Sorting algorithms  
+│   ├── mempool/            # Transaction pool + sharding
+│   ├── p2p/                # LibP2P networking
+│   └── state/              # State management (accounts, tokens)
+├── pkg/
+│   ├── types/              # Core data structures
+│   ├── utils/              # Crypto utilities
+│   └── wallet/             # Ed25519 key management
+└── simulation/             # Test scripts
+```
+
+## Performance Characteristics
+
+| Metric | Value | Note |
+|--------|-------|------|
+| Block Time | 60 seconds | Target (varies with difficulty) |
+| Block Size | 1GB max | Theoretical (NOT tested on network) |
+| TPS | Unknown | No real-world testing |
+| Network | Local Only | No public peers |
+| Consensus Security | **UNPROVEN** | Research only |
+
+## Known Issues & Technical Debt
+
+1. **Security**: No Byzantine fault tolerance proof
+2. **Consensus**: Sorting doesn't contribute to security, only used for data ordering
+3. **Scalability**: 1GB blocks are impractical for network propagation
+4. **State**: Simple key-value store, no Merkle Patricia Trie
+5. **P2P**: Basic GossipSub, no sophisticated peer management
+6. **Testing**: Simulations only, no real adversarial testing
+
+## Why This Exists
+
+This project is a **research experiment** to explore:
+- Can sorting algorithms be used in consensus? (Answer: Partially, but doesn't solve Byzantine issues)
+- How does parallel shard processing perform? (Answer: Works in simulation, untested in real network)
+- Is signature-based VRF sufficient? (Answer: More testing needed)
+
+## Contributing
+
+This is a **research project**, not a product. Contributions welcome for:
+- Academic analysis of the consensus mechanism
+- Performance benchmarking
+- Code quality improvements  
+- Documentation of findings
+
+**NOT looking for**:
+- Marketing materials
+- Production deployment help
+- Investment/tokenomics
+
+## License
+
+MIT License - See [LICENSE](LICENSE) file.
+
+## Disclaimer
+
+**THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND.**
+
+This is experimental research code. It has NOT been audited, NOT been tested in adversarial conditions, and is NOT suitable for any production use. The consensus mechanism is NOT proven to be Byzantine fault tolerant.
+
+Do NOT use this code to handle real value or in any security-critical context.
+
 ---
 
-## 🛡️ Security & Performance
-
-- **Block Time**: 60 Seconds (Mainnet)
-- **Max Block Size**: 1GB (Theoretical Cap)
-- **Protection**: Circuit Breakers, Execution Timeouts (5s), Memory Limits (64MB)
-- **Audit**: [Self-Audit Report](./docs/security_audit_report.md)
-
----
-
-## 🤝 Contribution
-
-Contributions are welcome! Please check the `docs/` folder for architectural details before submitting PRs.
-
----
-
-**Built with ❤️ by the LICODX Team**
+**Developer**: LICODX Team  
+**Status**: Experimental Research (Alpha)  
+**Last Updated**: January 2026
