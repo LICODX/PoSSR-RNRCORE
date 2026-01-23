@@ -4,7 +4,7 @@
 > 
 > This repository contains experimental code for academic research exploring whether sorting algorithms can contribute to distributed consensus mechanisms.
 > 
-> **NOT A PRODUCTION BLOCKCHAIN. NOT BYZANTINE FAULT TOLERANT. RESEARCH ONLY.**
+> **NOT A PRODUCTION BLOCKCHAIN. EDUCATIONAL TESTBED (BFT IMPLEMENTED).**
 
 ---
 
