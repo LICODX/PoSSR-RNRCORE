@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
+	"github.com/LICODX/PoSSR-RNRCORE/internal/finality"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/state"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/storage"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
@@ -14,7 +15,8 @@ import (
 type Blockchain struct {
 	store             *storage.Store
 	stateManager      *state.Manager
-	contractProcessor *ContractProcessor // NEW: for smart contract transactions
+	contractProcessor *ContractProcessor        // NEW: for smart contract transactions
+	finalityTracker   *finality.FinalityTracker // BFT finality
 	mu                sync.RWMutex
 	tip               types.BlockHeader
 	shardConfig       config.ShardConfig
@@ -23,9 +25,10 @@ type Blockchain struct {
 // NewBlockchain creates a new Blockchain instance
 func NewBlockchain(db *storage.Store, shardCfg config.ShardConfig) *Blockchain {
 	bc := &Blockchain{
-		store:        db,
-		stateManager: state.NewManager(db.GetDB()),
-		shardConfig:  shardCfg,
+		store:           db,
+		stateManager:    state.NewManager(db.GetDB()),
+		shardConfig:     shardCfg,
+		finalityTracker: finality.NewFinalityTracker(100), // Checkpoint every 100 blocks
 	}
 
 	// Initialize Contract Processor
@@ -87,6 +90,12 @@ func (bc *Blockchain) GetStateManager() *state.Manager {
 func (bc *Blockchain) AddBlock(block types.Block) error {
 	bc.mu.Lock()
 	defer bc.mu.Unlock()
+
+	// 0. Check Finality (prevent reorgs of finalized blocks)
+	if !bc.finalityTracker.CanReorg(block.Header.Height) {
+		return fmt.Errorf("cannot add block at height %d: already finalized at %d",
+			block.Header.Height, bc.finalityTracker.GetFinalizedHeight())
+	}
 
 	// 1. Validate Height (critical: check AFTER acquiring lock)
 	if block.Header.Height != bc.tip.Height+1 && block.Header.Height != 0 {

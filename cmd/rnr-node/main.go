@@ -364,6 +364,11 @@ func main() {
 			return node.PublishProposal(proposal)
 		}
 
+		// Wire finality tracker
+		bftEngine.MarkFinalized = func(height uint64, hash [32]byte) error {
+			return chain.MarkBlockFinalized(height, hash)
+		}
+
 		// Listen for incoming votes and proposals
 		node.ListenForVotes(func(vote *bft.Vote) {
 			bftEngine.ProcessIncomingVote(vote)

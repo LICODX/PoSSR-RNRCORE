@@ -31,6 +31,7 @@ type BFTEngine struct {
 	// Callbacks for P2P broadcasting
 	BroadcastVote     func(*bft.Vote) error
 	BroadcastProposal func(*bft.Proposal) error
+	MarkFinalized     func(uint64, [32]byte) error // Called when block reaches 2/3+ precommits
 }
 
 // NewBFTEngine creates a new BFT consensus engine
@@ -280,6 +281,13 @@ func (be *BFTEngine) RunConsensusRound(
 	// Phase 4: Commit (Block Finalized!)
 	be.State.EnterCommit(height, 0)
 	fmt.Printf("[BFT] ✅ Block %d COMMITTED (finalized with 2/3+ votes)\n", height)
+
+	// Mark block as finalized (irreversible)
+	if be.MarkFinalized != nil {
+		if err := be.MarkFinalized(height, proposedBlock.Header.Hash); err != nil {
+			fmt.Printf("[BFT] Warning: Failed to mark block as finalized: %v\n", err)
+		}
+	}
 
 	// Finalize commit and prepare for next height
 	be.State.FinalizeCommit(height)
