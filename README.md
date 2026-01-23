@@ -6,6 +6,18 @@
 > 
 > **NOT A PRODUCTION BLOCKCHAIN. NOT BYZANTINE FAULT TOLERANT. RESEARCH ONLY.**
 
+---
+
+## 📖 **Important: Vision vs Reality**
+
+**This README describes Phase 0 (Educational L1) - our current implementation.**
+
+For the full story of how this project evolved from the original whitepaper vision (1GB blocks) to the current implementation (10MB blocks), and the phased roadmap to eventually achieve the full vision, please read:
+
+**👉 [VISION_VS_REALITY.md](VISION_VS_REALITY.md)** — Reconciles whitepaper claims, technical criticism, and realistic implementation.
+
+---
+
 ## Research Question
 
 **Primary Question**: Can computational sorting races provide measurable security or consensus properties in distributed systems?
