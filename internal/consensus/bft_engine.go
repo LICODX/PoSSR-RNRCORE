@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/LICODX/PoSSR-RNRCORE/internal/consensus/bft"
+	"github.com/LICODX/PoSSR-RNRCORE/internal/slashing"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
 )
 
@@ -17,6 +18,10 @@ type BFTEngine struct {
 	// Core components
 	State      *bft.ConsensusState
 	Validators *bft.ValidatorSet
+
+	// Security
+	SlashingTracker *slashing.SlashingTracker
+	voteCache       *voteCache // Track votes to detect double-signing
 
 	// Node identity
 	ValidatorAddress [32]byte
@@ -55,6 +60,8 @@ func NewBFTEngine(
 	engine := &BFTEngine{
 		State:            state,
 		Validators:       validators,
+		SlashingTracker:  slashing.NewSlashingTracker(),
+		voteCache:        newVoteCache(),
 		ValidatorAddress: validatorAddr,
 		ValidatorPrivKey: privKey,
 		ValidatorIndex:   valIndex,
@@ -183,6 +190,12 @@ func (be *BFTEngine) RunConsensusRound(
 		select {
 		case vote := <-be.VoteChan:
 			if vote.Type == bft.VoteTypePrevote && vote.Height == height {
+				// Check for double-signing
+				if be.detectDoubleSign(vote, be.voteCache) {
+					fmt.Printf("[BFT] ⚠️  DOUBLE-SIGN DETECTED from validator %x - SLASHED!\n", vote.ValidatorAddress[:4])
+					continue // Skip this vote
+				}
+
 				if err := be.State.AddVote(vote); err != nil {
 					fmt.Printf("[BFT] Warning: Invalid prevote: %v\n", err)
 					continue
@@ -248,6 +261,12 @@ func (be *BFTEngine) RunConsensusRound(
 		select {
 		case vote := <-be.VoteChan:
 			if vote.Type == bft.VoteTypePrecommit && vote.Height == height {
+				// Check for double-signing
+				if be.detectDoubleSign(vote, be.voteCache) {
+					fmt.Printf("[BFT] ⚠️  DOUBLE-SIGN DETECTED from validator %x - SLASHED!\n", vote.ValidatorAddress[:4])
+					continue // Skip this vote
+				}
+
 				if err := be.State.AddVote(vote); err != nil {
 					fmt.Printf("[BFT] Warning: Invalid precommit: %v\n", err)
 					continue
