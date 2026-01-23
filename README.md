@@ -18,11 +18,12 @@
 
 Core references for developers and researchers:
 
-- **[Technical Whitepaper v2.0](docs/TECHNICAL_WHITEPAPER_v2.md)**: Architectural specification, reconciling the high-throughput vision with current network constraints.
-- **[Economic & Incentive Model](docs/INCENTIVES.md)**: Details on the hybrid reward mechanism, proportional shard distribution, and slashing conditions.
-- **[Security Architecture](docs/SECURITY.md)**: Comprehensive security model including BFT guarantees, attack vectors, and mitigations.
-- **[Academic Analysis](docs/ACADEMIC_PREPRINT.md)**: Original research on the properties of sorting-based consensus.
-- **[Implementation Status](docs/IMPLEMENTATION_STATUS.md)**: Audit of currently running features vs. roadmap.
+## 📚 Documentation
+
+- **[Technical White Paper](docs/WHITE_PAPER.md)**: The authoritative protocol specification, coverage Consensus, Network Topology, and Economics.
+- **[Security Model](docs/SECURITY.md)**: Threat model and security guarantees.
+- **[API Reference](docs/API_REFERENCE.md)**: JSON-RPC specifications.
+- **[Setup Guide](docs/SETUP_GUIDE.md)**: Installation and deployment instructions.
 
 ---
 
