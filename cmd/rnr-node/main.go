@@ -380,6 +380,10 @@ func main() {
 		fmt.Println("✅ BFT Engine initialized")
 		fmt.Println("🔄 Starting BFT consensus rounds...")
 
+		// Initialize Validator Reward Manager (10 shards)
+		rewardMgr := NewValidatorRewardManager(10)
+		rewardMgr.UpdateShardAssignment(valSet) // Initial assignment
+
 		// BFT Consensus Loop
 		for {
 			lastHeader := chain.GetTip()
@@ -388,21 +392,12 @@ func main() {
 			// Get transactions from mempool
 			txs := node.GetMempoolShard()
 
-			// Create coinbase (validators will be rewarded based on participation)
-			var minerAddress [32]byte
-			copy(minerAddress[:], nodeWallet.PublicKey)
+			// Create proportional coinbase transactions (one per validator based on shards)
 			baseReward := economics.GetBlockReward(height)
+			coinbaseTxs := rewardMgr.CreateCoinbaseTransactions(height, uint64(baseReward), valSet)
 
-			coinbaseTx := types.Transaction{
-				ID:        [32]byte{1, 1, 1, 1, byte(height)},
-				Sender:    [32]byte{},
-				Receiver:  minerAddress,
-				Amount:    uint64(baseReward),
-				Nonce:     0,
-				Signature: [64]byte{},
-			}
-
-			consensusTxs := append([]types.Transaction{coinbaseTx}, txs...)
+			// Combine coinbase + user transactions
+			consensusTxs := append(coinbaseTxs, txs...)
 
 			// Run BFT consensus round
 			fmt.Printf("\n[BFT] Height %d: Starting consensus round\n", height)
