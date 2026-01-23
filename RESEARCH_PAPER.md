@@ -6,6 +6,15 @@ This paper presents an experimental analysis of whether computational sorting ra
 
 **Keywords**: Distributed Consensus, Byzantine Fault Tolerance, Proof-of-Work, Sorting Algorithms, Blockchain
 
+> **📝 POST-PUBLICATION UPDATE (Jan 23, 2026)**:  
+> Following the publication of this research documenting that sorting **alone** does not achieve BFT, we have implemented a **hybrid solution** combining:
+> - Sorting for leader election (PoSSR mechanism)
+> - Full BFT consensus (Tendermint-style voting)
+> - Economic security (slashing)
+> - Instant finality (2/3+ majority)
+>
+> The updated system addresses all Byzantine fault concerns raised in Section 6. See [VISION_VS_REALITY.md](VISION_VS_REALITY.md) for implementation details. This paper remains accurate as analysis of sorting-only consensus; the hybrid approach validates our recommendation in Section 9.1.
+
 ---
 
 ## 1. Introduction

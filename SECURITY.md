@@ -4,6 +4,8 @@
 >
 > This document explains the security mechanisms in technical detail, including attack vectors, mitigations, and limitations.
 
+> **✅ UPDATE (Jan 23, 2026)**: All security features described below are now **FULLY INTEGRATED** into the runtime. Run with `--bft-mode` to enable BFT consensus, slashing, and instant finality.
+
 ---
 
 ## Table of Contents
