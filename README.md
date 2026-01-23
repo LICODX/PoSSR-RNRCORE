@@ -35,38 +35,104 @@ This is a **proof-of-concept implementation** to measure and analyze:
 3. **Network Behavior**: How does topic-based message sharding perform in LibP2P?
 4. **Algorithm Variance**: Do different sorting algorithms (Quick, Merge, Heap, etc.) create measurable randomness?
 
-## Architecture (Research Prototype)
+## Architecture (Educational L1 Testbed)
 
 ```
-Components Implemented:
-├── PoW Module          - Basic hash-based mining (spam prevention only)
-├── VRF Module          - Ed25519 signature-based seed generation
-├── Sorting Engine      - 7 algorithms (parallel execution)
-├── Linear Validator    - O(N) order verification
-├── P2P Network         - Topic-based message routing (10 topics)
-└── State Store         - Simple key-value (BadgerDB)
+✅ Fully Implemented Components:
+├── PoW Module               - Basic hash-based mining (spam prevention)
+├── VRF Module               - Ed25519 signature-based seed generation
+├── Sorting Engine           - 7 algorithms (parallel execution)
+├── Linear Validator         - O(N) order verification
+├── P2P Network              - LibP2P with GossipSub (10 shard topics + BFT topics)
+├── State Store              - LevelDB key-value store
+├── BFT Consensus Engine     - Tendermint-style consensus (Propose→Prevote→Precommit→Commit)
+├── Finality Tracker         - Instant finality via 2/3+ votes
+├── Slashing Enforcement     - Double-sign detection & automatic penalties
+├── Validator Management     - Multi-validator support with shard assignment
+└── Proportional Rewards     - Shard-based reward distribution
 
-Components NOT Implemented:
-├── Byzantine Fault Tolerance    - No BFT consensus
-├── Economic Security           - No game theory
-├── Smart Contract Runtime      - No WASM execution
-├── State Sharding             - Only message-level partitioning
-└── Cross-Shard Communication  - No atomic cross-partition ops
+⚠️ Partially Implemented:
+├── Smart Contract Runtime   - WASM VM present but disabled (circular import issue)
+├── Cross-Shard Atomicity    - Message-level sharding only
+└── Network Discovery        - mDNS for local, manual peering for WAN
+
+❌ Not Yet Implemented:
+├── Full State Sharding      - Only transaction/mempool sharding
+├── Light Clients            - No SPV/merkle proofs
+└── Advanced Cryptoeconomics - Basic slashing only, no complex incentives
 ```
 
-## Running Experiments
+## Running the Node
 
 ### Prerequisites
 - Go 1.21+
-- ~4GB RAM for simulations
+- ~4GB RAM
+- Port 3000 (P2P) and 9001 (RPC) available
 
-### Local Node Test
+### PoW Mode (Original - Single Node)
 ```bash
 git clone https://github.com/LICODX/PoSSR-RNRCORE.git
 cd PoSSR-RNRCORE
-go build -o sbce-node ./cmd/rnr-node
-./sbce-node
+go build -o rnr-node ./cmd/rnr-node
+./rnr-node
 ```
+
+### BFT Mode (NEW - Multi-Validator Consensus)
+```bash
+# Node with BFT consensus enabled
+./rnr-node --bft-mode
+
+# Custom ports
+./rnr-node --bft-mode --port 3001 --rpc-port 9002
+```
+
+**Multi-Node Setup** (requires manual validator configuration - see [bft_integration_walkthrough.md](docs/bft_integration_walkthrough.md)):
+```bash
+# Node 1
+./rnr-node --bft-mode --port 3000
+
+# Node 2 (connect to Node 1)
+./rnr-node --bft-mode --port 3001 --peer /ip4/<NODE1_IP>/tcp/3000/p2p/<PEER_ID>
+```
+
+## BFT Consensus Features (NEW)
+
+The node now supports **Byzantine Fault Tolerant consensus** alongside the original sorting-based mechanism:
+
+### Consensus Modes
+
+| Mode | Command | Use Case |
+|------|---------|----------|
+| **PoW** | `./rnr-node` | Single-node testing, sorting research |
+| **BFT** | `./rnr-node --bft-mode` | Multi-validator network with fault tolerance |
+
+### BFT Features Implemented
+
+1. **Tendermint-Style Consensus**
+   - Four-phase voting: Propose → Prevote → Precommit → Commit
+   - 2/3+ majority required at each phase
+   - Automatic timeout and round progression
+
+2. **Instant Finality**
+   - Blocks finalized immediately upon 2/3+ precommits
+   - No probabilistic finality (unlike Bitcoin/Ethereum PoW)
+   - Checkpoint system every 100 blocks
+
+3. **Economic Security (Slashing)**
+   - Automatic detection of double-signing
+   - 100% stake burned for Byzantine behavior
+   - Malicious validators tombstoned (permanently removed)
+
+4. **Fair Reward Distribution**
+   - Validators rewarded based on shard processing
+   - Round-robin shard assignment
+   - Multiple coinbase transactions per block
+
+### Limitation: Multi-Validator Setup
+
+Currently, multi-validator networks require manual configuration. See the [BFT Integration Walkthrough](docs/bft_integration_walkthrough.md) for detailed setup instructions.
+
+---
 
 ### Simulation Experiments
 ```bash
