@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	"github.com/LICODX/PoSSR-RNRCORE/internal/blockchain"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/consensus"
+	"github.com/LICODX/PoSSR-RNRCORE/internal/consensus/bft"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/dashboard"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/economics"
 	"github.com/LICODX/PoSSR-RNRCORE/internal/params"
@@ -41,6 +43,7 @@ func main() {
 	useGossipSub := flag.Bool("gossipsub", true, "Use GossipSub (recommended)")
 	isGenesis := flag.Bool("genesis", false, "Start as Genesis Node (Authority)")
 	walletPassword := flag.String("wallet-password", "", "Password for wallet encryption (optional)")
+	bftMode := flag.Bool("bft-mode", false, "Enable BFT consensus (multi-validator mode)")
 	flag.Parse()
 
 	configPath := flag.String("config", "config/mainnet.yaml", "Path to configuration file")
@@ -325,82 +328,170 @@ func main() {
 	dashboardPortStr := fmt.Sprintf("%d", *dashboardPort)
 	go dashboard.StartServer(dashboardPortStr, chain, node, nodeWallet) // Pass wallet
 
-	// 6. Mining Loop (Proof of Repeated Sorting)
-	fmt.Println("🏁 Mining Loop Started. Searching for a valid block...")
+	// 6. Consensus Loop (PoW Mining OR BFT Consensus)
+	if *bftMode {
+		fmt.Println("🎯 BFT Consensus Mode Enabled")
+		fmt.Println("⚠️  Multi-validator mode requires multiple nodes running with --bft-mode")
 
-	for {
-		lastHeader := chain.GetTip()
-		difficulty := uint64(1000)
+		// Create initial validator set with this node as genesis validator
+		var validatorAddr [32]byte
+		copy(validatorAddr[:], nodeWallet.PublicKey)
 
-		// Get transactions from P2P mempool
-		txs := node.GetMempoolShard()
-
-		//MAINNET MODE: Mine even if mempool is empty (empty blocks are valid)
-
-		// Create Coinbase Transaction (Block Reward)
-		var minerAddress [32]byte
-		copy(minerAddress[:], nodeWallet.PublicKey)
-
-		// Calculate block reward using economics module (decaying over time)
-		baseReward := economics.GetBlockReward(lastHeader.Height + 1)
-
-		// TODO: In full implementation, this would get validator addresses from BFT consensus
-		// For now, use simplified model: miner gets reward for shards they processed
-		// In distributed network: assign shards to multiple validators, reward proportionally
-
-		// Example: If network has 4 validators, shards are distributed as:
-		// Validator 0: Shards [0, 4, 8]     → 3 shards → 30% of reward
-		// Validator 1: Shards [1, 5, 9]     → 3 shards → 30% of reward
-		// Validator 2: Shards [2, 6]        → 2 shards → 20% of reward
-		// Validator 3: Shards [3, 7]        → 2 shards → 20% of reward
-		//
-		// Current simplified mode: Single miner processes all 10 shards → 100% reward
-
-		coinbaseTx := types.Transaction{
-			ID:        [32]byte{1, 1, 1, 1, byte(lastHeader.Height)},
-			Sender:    [32]byte{}, // System
-			Receiver:  minerAddress,
-			Amount:    uint64(baseReward), // Full reward (all shards processed)
-			Nonce:     0,                  // System TX
-			Signature: [64]byte{},
+		genesisValidator := &bft.Validator{
+			Address:     validatorAddr,
+			VotingPower: 1, // Equal voting power for now
+			PubKey:      nodeWallet.PrivateKey.Public().(ed25519.PublicKey),
 		}
 
-		// Prepend Coinbase to transactions
-		minableTxs := append([]types.Transaction{coinbaseTx}, txs...)
+		valSet := bft.NewValidatorSet([]*bft.Validator{genesisValidator})
 
-		var minerPubKey [32]byte
-		copy(minerPubKey[:], nodeWallet.PublicKey)
+		// TODO: Load additional validators from config or network discovery
+		// For now, single validator (will work but no Byzantine tolerance)
 
-		newBlock, err := consensus.MineBlock(minableTxs, lastHeader, difficulty, stopMining, minerPubKey, nodeWallet.PrivateKey)
+		// Create BFT Engine
+		bftEngine := consensus.NewBFTEngine(
+			chain.GetTip().Height+1,
+			valSet,
+			validatorAddr,
+			nodeWallet.PrivateKey,
+		)
 
-		if err != nil {
-			if err.Error() == "mining interrupted" {
-				fmt.Println("Mining interrupted! Restarting...")
+		// Wire P2P handlers
+		bftEngine.BroadcastVote = func(vote *bft.Vote) error {
+			return node.PublishVote(vote)
+		}
+		bftEngine.BroadcastProposal = func(proposal *bft.Proposal) error {
+			return node.PublishProposal(proposal)
+		}
+
+		// Listen for incoming votes and proposals
+		node.ListenForVotes(func(vote *bft.Vote) {
+			bftEngine.ProcessIncomingVote(vote)
+		})
+		node.ListenForProposals(func(proposal *bft.Proposal) {
+			bftEngine.ProcessIncomingProposal(proposal)
+		})
+
+		fmt.Println("✅ BFT Engine initialized")
+		fmt.Println("🔄 Starting BFT consensus rounds...")
+
+		// BFT Consensus Loop
+		for {
+			lastHeader := chain.GetTip()
+			height := lastHeader.Height + 1
+
+			// Get transactions from mempool
+			txs := node.GetMempoolShard()
+
+			// Create coinbase (validators will be rewarded based on participation)
+			var minerAddress [32]byte
+			copy(minerAddress[:], nodeWallet.PublicKey)
+			baseReward := economics.GetBlockReward(height)
+
+			coinbaseTx := types.Transaction{
+				ID:        [32]byte{1, 1, 1, 1, byte(height)},
+				Sender:    [32]byte{},
+				Receiver:  minerAddress,
+				Amount:    uint64(baseReward),
+				Nonce:     0,
+				Signature: [64]byte{},
+			}
+
+			consensusTxs := append([]types.Transaction{coinbaseTx}, txs...)
+
+			// Run BFT consensus round
+			fmt.Printf("\n[BFT] Height %d: Starting consensus round\n", height)
+			committedBlock, err := bftEngine.RunConsensusRound(height, consensusTxs)
+
+			if err != nil {
+				fmt.Printf("[BFT] Consensus failed: %v\n", err)
+				fmt.Println("[BFT] Retrying in 3 seconds...")
+				time.Sleep(3 * time.Second)
 				continue
 			}
-			fmt.Println("Mining error:", err)
-			continue
+
+			// Add block to chain
+			if err := chain.AddBlock(*committedBlock); err != nil {
+				fmt.Printf("[BFT] Failed to add block: %v\n", err)
+				continue
+			}
+
+			fmt.Printf("[BFT] ✅ Block %d FINALIZED and added to chain\n", height)
+
+			// Broadcast block
+			node.PublishBlock(*committedBlock)
+
+			// Clear mempool
+			node.ClearMempool()
+
+			// Small delay before next round
+			time.Sleep(time.Duration(params.BlockTime) * time.Second)
 		}
 
-		fmt.Printf("[SUCCESS] Block Found! Nonce: %d | Hash: %x\n", newBlock.Header.Nonce, newBlock.Header.Hash)
+	} else {
+		// Traditional PoW Mining Mode
+		fmt.Println("🏁 PoW Mining Mode (Single Node)")
+		fmt.Println("   Use --bft-mode for multi-validator consensus")
 
-		// Add to local chain
-		if err := chain.AddBlock(*newBlock); err != nil {
-			fmt.Printf("Failed to add block: %v\n", err)
-			continue
+		for {
+			lastHeader := chain.GetTip()
+			difficulty := uint64(1000)
+
+			// Get transactions from P2P mempool
+			txs := node.GetMempoolShard()
+
+			// Create Coinbase Transaction (Block Reward)
+			var minerAddress [32]byte
+			copy(minerAddress[:], nodeWallet.PublicKey)
+
+			// Calculate block reward using economics module (decaying over time)
+			baseReward := economics.GetBlockReward(lastHeader.Height + 1)
+
+			coinbaseTx := types.Transaction{
+				ID:        [32]byte{1, 1, 1, 1, byte(lastHeader.Height)},
+				Sender:    [32]byte{}, // System
+				Receiver:  minerAddress,
+				Amount:    uint64(baseReward), // Full reward (all shards processed)
+				Nonce:     0,                  // System TX
+				Signature: [64]byte{},
+			}
+
+			// Prepend Coinbase to transactions
+			minableTxs := append([]types.Transaction{coinbaseTx}, txs...)
+
+			var minerPubKey [32]byte
+			copy(minerPubKey[:], nodeWallet.PublicKey)
+
+			newBlock, err := consensus.MineBlock(minableTxs, lastHeader, difficulty, stopMining, minerPubKey, nodeWallet.PrivateKey)
+
+			if err != nil {
+				if err.Error() == "mining interrupted" {
+					fmt.Println("Mining interrupted! Restarting...")
+					continue
+				}
+				fmt.Println("Mining error:", err)
+				continue
+			}
+
+			fmt.Printf("[SUCCESS] Block Found! Nonce: %d | Hash: %x\n", newBlock.Header.Nonce, newBlock.Header.Hash)
+
+			// Add to local chain
+			if err := chain.AddBlock(*newBlock); err != nil {
+				fmt.Printf("Failed to add block: %v\n", err)
+				continue
+			}
+
+			fmt.Printf("[OK] Block Accepted! Height: %d\n", newBlock.Header.Height)
+
+			// THROTTLE: Wait for BlockTime (6s) to ensure consistent heartbeat
+			fmt.Printf("[WAIT] Waiting %d seconds for next round...\n", params.BlockTime)
+			time.Sleep(time.Duration(params.BlockTime) * time.Second)
+
+			// Broadcast Block (Split into Header + Shards)
+			node.PublishBlock(*newBlock)
+
+			// Clear mempool (Simplified)
+			node.ClearMempool()
 		}
-
-		fmt.Printf("[OK] Block Accepted! Height: %d\n", newBlock.Header.Height)
-
-		// THROTTLE: Wait for BlockTime (6s) to ensure consistent heartbeat
-		fmt.Printf("[WAIT] Waiting %d seconds for next round...\n", params.BlockTime)
-		time.Sleep(time.Duration(params.BlockTime) * time.Second)
-
-		// Broadcast Block (Split into Header + Shards)
-		// PublishBlock now takes types.Block struct
-		node.PublishBlock(*newBlock)
-
-		// Clear mempool (Simplified)
-		node.ClearMempool()
 	}
 }

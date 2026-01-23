@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
-	"github.com/LICODX/PoSSR-RNRCORE/pkg/vm"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -25,21 +24,20 @@ type Manager struct {
 	// Sub-managers
 	contractState *ContractState
 	tokenState    *TokenState
-	executor      *vm.ContractExecutor
+	executor      interface{} // vm.ContractExecutor (avoid circular import)
 }
 
 // NewManager creates a new state manager
 func NewManager(db *leveldb.DB) *Manager {
 	contractState := NewContractState(db)
 	tokenState := NewTokenState(db)
-	executor := vm.NewContractExecutor(contractState)
 
 	return &Manager{
 		db:            db,
 		cache:         make(map[[32]byte]*Account),
 		contractState: contractState,
 		tokenState:    tokenState,
-		executor:      executor,
+		executor:      nil, // Set later via SetExecutor to avoid circular import
 	}
 }
 
@@ -151,6 +149,8 @@ func (m *Manager) GetTokenState() *TokenState {
 }
 
 // GetContractExecutor returns the contract executor
-func (m *Manager) GetContractExecutor() *vm.ContractExecutor {
-	return m.executor
-}
+// COMMENTED OUT: Causes circular import (vm → state → vm)
+// Use blockchain.ContractProcessor instead for contract execution
+// func (m *Manager) GetContractExecutor() *vm.ContractExecutor {
+// 	return m.executor
+// }

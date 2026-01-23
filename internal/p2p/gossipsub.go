@@ -22,6 +22,8 @@ const (
 	TopicShardPrefix  = "rnr/shard/"       // + shardID (e.g. rnr/shard/0/1.0.0)
 	TopicTransactions = "rnr/transactions/1.0.0"
 	TopicProofs       = "rnr/proofs/1.0.0"
+	TopicVotes        = "rnr/votes/1.0.0"     // BFT votes (prevote/precommit)
+	TopicProposals    = "rnr/proposals/1.0.0" // BFT block proposals
 )
 
 // GossipSubNode wraps LibP2P host with GossipSub
@@ -30,16 +32,20 @@ type GossipSubNode struct {
 	pubsub *pubsub.PubSub
 	ctx    context.Context
 
-	blockTopic  *pubsub.Topic // Deprecated, replaced by header + shards
-	headerTopic *pubsub.Topic
-	shardTopics map[int]*pubsub.Topic
-	txTopic     *pubsub.Topic
-	proofTopic  *pubsub.Topic
+	blockTopic    *pubsub.Topic // Deprecated, replaced by header + shards
+	headerTopic   *pubsub.Topic
+	shardTopics   map[int]*pubsub.Topic
+	txTopic       *pubsub.Topic
+	proofTopic    *pubsub.Topic
+	voteTopic     *pubsub.Topic // BFT votes
+	proposalTopic *pubsub.Topic // BFT proposals
 
-	headerSub *pubsub.Subscription
-	shardSubs map[int]*pubsub.Subscription
-	txSub     *pubsub.Subscription
-	proofSub  *pubsub.Subscription
+	headerSub   *pubsub.Subscription
+	shardSubs   map[int]*pubsub.Subscription
+	txSub       *pubsub.Subscription
+	proofSub    *pubsub.Subscription
+	voteSub     *pubsub.Subscription // BFT votes subscription
+	proposalSub *pubsub.Subscription // BFT proposals subscription
 
 	shardConfig config.ShardConfig
 
@@ -161,7 +167,27 @@ func (n *GossipSubNode) joinTopics() error {
 		return err
 	}
 
-	fmt.Println("✅ Subscribed to GossipSub topics")
+	// Join BFT votes topic
+	n.voteTopic, err = n.pubsub.Join(TopicVotes)
+	if err != nil {
+		return err
+	}
+	n.voteSub, err = n.voteTopic.Subscribe()
+	if err != nil {
+		return err
+	}
+
+	// Join BFT proposals topic
+	n.proposalTopic, err = n.pubsub.Join(TopicProposals)
+	if err != nil {
+		return err
+	}
+	n.proposalSub, err = n.proposalTopic.Subscribe()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("✅ Subscribed to GossipSub topics (including BFT consensus)")
 	return nil
 }
 

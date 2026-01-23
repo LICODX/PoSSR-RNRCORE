@@ -29,12 +29,13 @@ func NewBlockchain(db *storage.Store, shardCfg config.ShardConfig) *Blockchain {
 	}
 
 	// Initialize Contract Processor
-	bc.contractProcessor = NewContractProcessor(
-		bc.stateManager.GetContractExecutor(),
-		bc.stateManager.GetContractState(),
-	)
+	// TEMP DISABLED: Circular import issue with vm package
+	// bc.contractProcessor = NewContractProcessor(
+	// 	bc.stateManager.GetContractExecutor(),
+	// 	bc.stateManager.GetContractState(),
+	// )
 
-	// Try to load tip from DB
+	//Try to load tip from DB
 	tipData, err := db.GetTip()
 	if err == nil {
 		// Existing chain
