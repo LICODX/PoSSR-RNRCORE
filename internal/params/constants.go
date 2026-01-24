@@ -2,10 +2,11 @@ package params
 
 const (
 	// Realistic Block Parameters for Educational L1
-	BlockTime    = 6                // 6 seconds (fast finality)
-	MaxBlockSize = 10 * 1024 * 1024 // 10 MB (realistic for P2P network)
-	ShardSize    = 1 * 1024 * 1024  // 1 MB per shard
-	NumShards    = 10               // 10 Shards
+	BlockTime      = 6                // 6 seconds (fast finality)
+	MaxBlockSize   = 10 * 1024 * 1024 // 10 MB (Realistic constraint, addressing debat/9.txt)
+	MaxMessageSize = 10 * 1024 * 1024 // 10 MB (LibP2P Limit Override)
+	ShardSize      = 1 * 1024 * 1024  // 1 MB per shard
+	NumShards      = 10               // 10 Shards
 
 	// Tokenomics (5 Billion Supply, 7% Decay / 3.5M Blocks)
 	TotalSupply     = 5000000000
@@ -14,7 +15,7 @@ const (
 	DecayRate       = 0.07    // 7%
 
 	// Storage
-	PruningWindow = 25 // Keep 25 blocks (~25 minutes of data) - Whitepaper Spec
+	PruningWindow = 100 // Keep 100 blocks (Hardened from 25)
 
 	// Transaction Fees (Anti-Spam)
 	MinTxFee = 1 // Minimum 1 unit (0.000001 RNR) per transaction

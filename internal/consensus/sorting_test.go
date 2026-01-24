@@ -155,7 +155,7 @@ func TestAllAlgorithmsProduceSameResult(t *testing.T) {
 		data := make([]SortableTransaction, len(txs))
 		for i, tx := range txs {
 			data[i] = SortableTransaction{
-				Tx:  tx,
+				Tx:  &txs[i], // Use pointer to original array element
 				Key: utils.MixHash(tx.ID, seed),
 			}
 		}
@@ -282,7 +282,7 @@ func TestSortingLargeDataset(t *testing.T) {
 	data := make([]SortableTransaction, len(txs))
 	for i, tx := range txs {
 		data[i] = SortableTransaction{
-			Tx:  tx,
+			Tx:  &txs[i],
 			Key: utils.MixHash(tx.ID, seed),
 		}
 	}

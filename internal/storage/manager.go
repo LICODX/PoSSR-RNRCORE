@@ -28,19 +28,27 @@ func GenerateBlockBodyKey(height uint64) []byte {
 	return []byte(fmt.Sprintf("block-body-%d", height))
 }
 
-// SaveBlock saves a block to the database
+// SaveBlock saves a block to the database (Hardened against OOM)
+// Addressing debat/9.txt: "LevelDB OOM Risk"
 func (s *Store) SaveBlock(block types.Block) error {
-	// 1. Save Body
-	bodyKey := GenerateBlockBodyKey(block.Header.Height)
-	bodyData, _ := json.Marshal(block.Shards) // Simple JSON serialization for prototype
-	if err := s.db.Put(bodyKey, bodyData, nil); err != nil {
+	// 1. Save Header (Small constant size)
+	headerKey := []byte(fmt.Sprintf("block-header-%d", block.Header.Height))
+	headerData, _ := json.Marshal(block.Header)
+	if err := s.db.Put(headerKey, headerData, nil); err != nil {
 		return err
 	}
 
-	// 2. Save Header (TODO: Separate bucket)
-	headerKey := []byte(fmt.Sprintf("block-header-%d", block.Header.Height))
-	headerData, _ := json.Marshal(block.Header)
-	return s.db.Put(headerKey, headerData, nil)
+	// 2. Save Shards Individually (Prevent 1GB allocation)
+	// Instead of marshaling the whole [10]ShardData array, we save each shard.
+	batch := new(leveldb.Batch)
+	for i, shard := range block.Shards {
+		shardKey := []byte(fmt.Sprintf("block-%d-shard-%d", block.Header.Height, i))
+		shardData, _ := json.Marshal(shard)
+		batch.Put(shardKey, shardData)
+	}
+
+	// Commit batch (LevelDB handles batch memory better than Go Heap)
+	return s.db.Write(batch, nil)
 }
 
 // PruneOldBlocks dipanggil setiap kali blok baru ditambahkan
@@ -52,11 +60,16 @@ func (s *Store) PruneOldBlocks(currentHeight uint64) error {
 	// Target blok yang harus dihapus (N - 25)
 	targetHeight := currentHeight - params.PruningWindow
 
-	// Hapus BODY blok (transaksi raw 1 GB), tapi simpan HEADER
-	key := GenerateBlockBodyKey(targetHeight)
+	// Hapus BODY blok (10 shards individual)
+	// Addressing debat/9.txt: "LevelDB Clean Up"
+	batch := new(leveldb.Batch)
+	for i := 0; i < 10; i++ {
+		key := []byte(fmt.Sprintf("block-%d-shard-%d", targetHeight, i))
+		batch.Delete(key)
+	}
 
-	// LevelDB Delete (Fast I/O)
-	err := s.db.Delete(key, nil)
+	// Commit delete batch
+	err := s.db.Write(batch, nil)
 	if err != nil {
 		return err
 	}

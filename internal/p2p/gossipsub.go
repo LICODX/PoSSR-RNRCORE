@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/LICODX/PoSSR-RNRCORE/internal/config"
+	"github.com/LICODX/PoSSR-RNRCORE/internal/params"
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -75,8 +76,11 @@ func NewGossipSubNode(ctx context.Context, port int, shardConfig config.ShardCon
 		return nil, err
 	}
 
-	// Create GossipSub instance
-	ps, err := pubsub.NewGossipSub(ctx, h)
+	// Create GossipSub instance with explicit message size limit (Hardening #1)
+	// Addressing debat/9.txt: "LibP2P 1MB Trap"
+	ps, err := pubsub.NewGossipSub(ctx, h,
+		pubsub.WithMaxMessageSize(params.MaxMessageSize),
+	)
 	if err != nil {
 		return nil, err
 	}

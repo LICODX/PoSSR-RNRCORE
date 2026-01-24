@@ -4,10 +4,11 @@ import (
 	"github.com/LICODX/PoSSR-RNRCORE/pkg/types"
 )
 
-// SortableTransaction wraps a transaction with its sorting key
+// SortableTransaction wraps a transaction pointer for efficiency
+// Addressing debat/9.txt: "Sorting GC Pressure"
 type SortableTransaction struct {
-	Tx  types.Transaction
-	Key string // MixHash(TxID, Seed)
+	Tx  *types.Transaction // Changed to pointer for Zero-Copy sorting
+	Key string             // MixHash(TxID, Seed)
 }
 
 // ByKey implements sort.Interface for []SortableTransaction based on Key field
