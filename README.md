@@ -1,105 +1,81 @@
-# RnR Core: Proof of Sorting Race (PoSSR) Protocol
+# PoSSR RNR Core
 
-> **Status: Pre-Alpha (Research & Development)**
->
-> ⚠️ **Warning**: This protocol is currently in active development. Features described below are implemented in the `main` branch but require specific flags (e.g., `--bft-mode`) to enable.
+This repository contains the reference implementation of the **RnR Blockchain**, featuring a hybrid **Proof-of-Sequential-Sorting-Race (PoSSR)** and **BFT** consensus mechanism.
 
-| Metric | Genesis Target (Current) | Future Target (Mainnet) |
-| :--- | :--- | :--- |
-| **Consensus** | PoSSR Leader Election + Committee BFT | Same |
-| **Block Size** | 10 MB | 1 GB (Sharded) |
-| **Target Hardware** | Consumer PC (8GB RAM) | High-End Workstation |
-| **Development** | Core Logic Validation | Scalability Optimization |
-| **TPS** | ~6,000 (Tested) | ~35,000 (Target) |
+> **Status**: Experimental / Pre-Alpha. Do not use in production with real value.
 
----
+## ✅ Implemented Features
 
-## 📚 Technical Documentation
+The following features are implemented in Go and verifiable via code:
 
-Core references for developers and researchers:
+1.  **Consensus Engine** (`internal/consensus`)
+    - **Algorithm**: Hybrid PoSSR (Sorting Race) + Tendermint-style BFT.
+    - **Finality**: Instant finality once 2/3+ validators precommit.
+    - **Logic**: Random sorting algorithm selection (Quick/Merge/Radix/Heap) seeded by VRF.
 
-## 📚 Documentation
+2.  **Networking** (`internal/p2p`)
+    - **Protocol**: LibP2P with GossipSub.
+    - **Hardening**: Explicit 10MB message size limit to override default 1MB cap.
+    - **Topics**: Directed gossiping for Shards vs Headers.
 
-- **[Technical White Paper](docs/WHITE_PAPER.md)**: The authoritative protocol specification, coverage Consensus, Network Topology, and Economics.
-- **[Security Model](docs/SECURITY.md)**: Threat model and security guarantees.
-- **[API Reference](docs/API_REFERENCE.md)**: JSON-RPC specifications.
-- **[Setup Guide](docs/SETUP_GUIDE.md)**: Installation and deployment instructions.
+3.  **Storage** (`internal/storage`)
+    - **Engine**: LevelDB.
+    - **Schema**: Batch-writes for blocks (Shards stored individually to prevent OOM).
+    - **Pruning**: Rolling window (default 100 blocks) to maintain lightweight footprint.
 
----
+4.  **Security** (`internal/slashing`)
+    - **Slashing**: Automated detection for Double-Signing (100% slash) and Downtime (1% slash).
+    - **Cryptography**: Ed25519 for validator signatures.
 
-## 🏗️ Architecture
-
-RnR Core implements a novel **Hybrid Consensus** mechanism:
-
-1.  **Proof-of-Sequential-Sorting-Race (PoSSR)**:
-    - Replaces energy-intensive hashing with useful sorting work.
-    - Determines **Leader Election** (Block Proposal).
-    - Algorithms: QuickSort, MergeSort, HeapSort (Running in parallel).
-
-2.  **Tendermint-Style BFT**:
-    - Ensures **Instant Finality** (2/3+ Majority).
-    - Prevents forks via **Slashing** (100% penalty for equivocation).
-    - Provides safety even if leader election is gamed.
-
-### Component Stack
-```
-✅ Fully Implemented:
-├── PoW Module               - Spam prevention (Hashcash style)
-├── VRF Module               - Ed25519 seed generation
-├── Sorting Engine           - 7 Parallel Algorithms
-├── P2P Network              - LibP2P GossipSub (Clustered Topics)
-├── BFT Engine               - 4-Phase Voting (Propose->Commit)
-└── Shard Rewards            - Proportional Distribution Logic
-
-🚧 In Development:
-├── WASM Runtime             - Smart Contract Layer
-└── State Sharding           - Cross-shard Atomicity
-```
-
----
-
-## 🚀 Getting Started
+## 🛠️ Build & Run
 
 ### Prerequisites
 - Go 1.21+
-- Git
+- GCC (for LevelDB/BadgerDB CGO)
 
-### Installation
-
+### 1. Build
 ```bash
-git clone https://github.com/LICODX/PoSSR-RNRCORE.git
-cd PoSSR-RNRCORE
-go build -o rnr-node ./cmd/rnr-node
+go build -o bin/rnr-node.exe ./cmd/rnr-node
 ```
 
-### Running the Node
-
-**Mode A: Single Node (Dev/Test)**
-Standard mode for testing sorting algorithms locally.
+### 2. Run (Single Node - PoW Mode)
+Default educational mode (Mini-PoW for identity).
 ```bash
-./rnr-node
+./bin/rnr-node.exe --port 3000 --rpc-port 9000
 ```
 
-**Mode B: BFT Consensus (Pre-Alpha Network)**
-Enables full consensus engine, P2P voting, and slashing enforcement.
+### 3. Run (BFT Authority Mode)
+Runs the node as a validator with BFT finality enabled.
 ```bash
-./rnr-node --bft-mode --port 3000
+# Set Genesis Mnemonic (Required for Authority)
+$env:GENESIS_MNEMONIC="your mnemonic here"
+
+# Run with --bft-mode
+./bin/rnr-node.exe --bft-mode --genesis --port 3000
 ```
 
----
+### 4. Run Stress Test (Verification)
+Verify the internal logic without running a full node.
+```bash
+go run ./cmd/stress-test/main.go
+```
 
-## 🤝 Contributing
+## 📂 Project Structure
 
-We welcome contributions from the community. Please review our [Incentive Model](docs/INCENTIVES.md) to understand the protocol's goals effectively.
+- **`cmd/`**: Entry points.
+  - `rnr-node`: Main node daemon.
+  - `stress-test`: Hardening verification script.
+- **`internal/`**: Core logic (Private).
+  - `consensus`: BFT engine & Sorting algorithms.
+  - `p2p`: LibP2P wrapper & hardening.
+  - `storage`: LevelDB manager & batching logic.
+  - `slashing`: Offense detection & evidence handling.
+- **`pkg/`**: Shared libraries.
+  - `types`: Core data structures (Block, Tx).
+  - `wallet`: Key management.
 
-1.  Fork the repository
-2.  Create your feature branch (`git checkout -b feature/amazing-feature`)
-3.  Commit your changes (`git commit -m 'Add some amazing feature'`)
-4.  Push to the branch (`git push origin feature/amazing-feature`)
-5.  Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+## ⚠️ Known Limits (Hardcoded)
+- **Max Block Size**: 10 MB (Hard limit to prevent network DoS).
+- **Max Message Size**: 10 MB (LibP2P GossipSub constant).
+- **Pruning**: Retains last 25-100 blocks. 
+- **Validators**: Currently optimized for static validator sets (Genesis-based).
